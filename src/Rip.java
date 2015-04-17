@@ -1,4 +1,6 @@
 import java.io.*;
+import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 public class Rip {
@@ -6,9 +8,28 @@ public class Rip {
 
 
     public static void main (String [ ] args) {
-    leerConfiguracion();
+
+
+
+
+        Database data = new Database();
+        String[] IPv4 = {"192.168.1.5/8","1.1.1.1/3"};
+        int[] metrica = {1,2};
+        String[] NextHoop = {"5.5.5.5",""};
+
+        System.err.println(data.generarPaquete(IPv4,metrica,NextHoop).getData()[5]);
+    }
+    public static byte intToBytes( final int i ) {
+        ByteBuffer bb = ByteBuffer.allocate(4);
+        bb.putInt(i);
+        return bb.array()[3];
     }
 
+    public static byte toByte(int i){
+       return (byte) ((byte) i & 0xff);
+        //byte b=(byte)i;
+       // return (b & 0xff);
+    }
     public static void leerConfiguracion (){
 
         ArrayList<String> routers = new ArrayList<>();
@@ -35,7 +56,7 @@ public class Rip {
                 if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}$")){
                     routers.add(linea); //Corresponde a un router cercano
                 }
-                if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}\\\\[0-9]{1,2}$")){
+                if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}/[0-9]{1,2}$")){
                     rutasConectadas.add(linea); //Corresponde a una ruta conectada
                 }
 
@@ -45,5 +66,13 @@ public class Rip {
             e.printStackTrace();
         }
         System.out.println(routers);
+        System.out.println(rutasConectadas);
     }
+
+
+    /**
+     * Cada 30s
+     */
+
+
 }
