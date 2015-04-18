@@ -1,6 +1,7 @@
-import java.io.*;
-import java.net.*;
-import java.nio.ByteBuffer;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Rip {
@@ -8,28 +9,18 @@ public class Rip {
 
 
     public static void main (String [ ] args) {
-
-
-
-
-        Database data = new Database();
-        String[] IPv4 = {"192.168.1.5/8","1.1.1.1/3"};
-        int[] metrica = {1,2};
-        String[] NextHoop = {"5.5.5.5",""};
-
-        System.err.println(data.generarPaquete(IPv4,metrica,NextHoop).getData()[5]);
-    }
-    public static byte intToBytes( final int i ) {
-        ByteBuffer bb = ByteBuffer.allocate(4);
-        bb.putInt(i);
-        return bb.array()[3];
+        /*
+     Database data = new Database();
+        data.leerConfiguracion();
+        Entrada prueba;
+        try {
+          prueba = data.tablaDirecciones.get(InetAddress.getByName("87.2.3.1"));
+            System.out.println(prueba);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }*/
     }
 
-    public static byte toByte(int i){
-       return (byte) ((byte) i & 0xff);
-        //byte b=(byte)i;
-       // return (b & 0xff);
-    }
     public static void leerConfiguracion (){
 
         ArrayList<String> routers = new ArrayList<>();
