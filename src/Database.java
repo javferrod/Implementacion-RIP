@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+@Deprecated
 public class Database {
 
 
@@ -46,7 +47,7 @@ public class Database {
                 }
                 if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}\\/[0-9]{1,2}$")){
                     String[] s = linea.split("/");
-                    tablaDirecciones.put(InetAddress.getByName(s[0]),new Entrada(s[1],1));
+                    //tablaDirecciones.put(InetAddress.getByName(s[0]),new Entrada(s[1],1));
 
                 }
             }
@@ -131,8 +132,7 @@ public class Database {
         mensaje[21]=0;
         mensaje[22]=Metric;
 */
-        DatagramPacket paquete = new DatagramPacket(mensaje.array(), 4+20*numentradas);
-        return paquete;
+        return new DatagramPacket(mensaje.array(), 4+20*numentradas);
     }
 
 

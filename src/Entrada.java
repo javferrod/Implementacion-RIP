@@ -7,12 +7,14 @@ public class Entrada {
     byte[] mascara = new byte[4];
     byte[] nextHoop= new byte[4];
     byte metrica;
-    int timer;
 
-
-    Entrada(String mascara,String nextHoop,int metrica){
-
-        this(mascara,metrica);
+    Entrada(byte[] IPv4,byte[] mascara,byte metrica){
+        this.IPv4=IPv4;
+        this.mascara=mascara;
+        this.metrica=metrica;
+    }
+    Entrada(String IPv4, String mascara,String nextHoop,int metrica){
+        this(IPv4,mascara, metrica);
 
         String[] nextHoop1 = nextHoop.split("\\.");
         for (int i = 0; i < 4; i++) {
@@ -21,8 +23,13 @@ public class Entrada {
 
 
     }
+    Entrada(String IPv4, String mascara,int metrica){
 
-    Entrada(String mascara,int metrica){
+        try {
+            this.IPv4=InetAddress.getByName(IPv4).getAddress();
+        } catch (UnknownHostException e) {
+            System.err.println("IP no cumple el formato IPv4: "+ IPv4);
+        }
 
         int mascara1 = 0xffffffff << (32 - Integer.valueOf(mascara));
 
@@ -54,5 +61,16 @@ public class Entrada {
         }
         return mask + " NextHoop: " + nextH;
 
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o == null)                return false;
+        if(!(o instanceof Entrada)) return false;
+
+        Entrada e = (Entrada) o;
+        if(e.IPv4.equals(e.IPv4) & e.mascara.equals(mascara))
+            return true; //TODO mascara debe de comprobarse si es menor, porque entonces si la contiene ¿No?
+        return false;
     }
 }
