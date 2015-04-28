@@ -9,16 +9,7 @@ public class Rip {
 
 
     public static void main (String [ ] args) {
-        /*
-     Database data = new Database();
-        data.leerConfiguracion();
-        Entrada prueba;
-        try {
-          prueba = data.tablaDirecciones.get(InetAddress.getByName("87.2.3.1"));
-            System.out.println(prueba);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }*/
+
     }
 
     public static void leerConfiguracion (){

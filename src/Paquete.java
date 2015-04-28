@@ -1,10 +1,9 @@
 import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-/**
- * Created by javferrod on 27/04/15.
- */
 public class Paquete {
     ByteBuffer mensaje;
     int i;
@@ -33,7 +32,16 @@ public class Paquete {
         return entradas;
     }
 
-    void add(byte[] IPv4,byte[] mascara, byte[] nextHoop,byte metric){
+    void setMetrica(int index, byte metrica){
+        mensaje.put(20*(i-1)+23,metrica);
+    }
+    void setCommand(int command){
+        mensaje.put(0,(byte)command);
+    }
+    void addEntrada(Entrada e){
+        this.add(e.IPv4,e.mascara,e.nextHoop,e.metrica);
+    }
+    void add(byte[] IPv4,byte[] mascara, byte[] nextHoop,byte metric){ //TODO Si no se va a emplear, borrarlo y incluirlo en addEntrada
         /*--Entry table--*/
         mensaje.put(4+i*20,(byte)0);        //Address family
         mensaje.put(5+i*20,(byte)2);        //TODO http://tools.ietf.org/html/rfc1058 dice que 2 (¿?)
@@ -57,6 +65,15 @@ public class Paquete {
         mensaje.put(23+i*20,metric);
         i++;
     }
-    DatagramPacket generarDatagramPacket(){ return new DatagramPacket(mensaje.array(),(byte)mensaje.limit());}
-
+    DatagramPacket generarDatagramPacket(InetAddress addrDestino,int puertoDestino){
+            return new DatagramPacket(mensaje.array(),(byte)mensaje.limit(), addrDestino, puertoDestino);
+    }
+    DatagramPacket generarDatagramPacket(){
+        try {
+            return this.generarDatagramPacket(InetAddress.getByName("224.0.0.9"),520);
+        } catch (UnknownHostException e) {
+            System.err.println("Direccion multicas mal"); //TODO eliminar
+            return new DatagramPacket(new byte[0],1); //TODO Chapuza
+        }
+    }
 }
