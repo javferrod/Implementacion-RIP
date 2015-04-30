@@ -14,19 +14,19 @@ class TimerEx {
 
     static ArrayList<Entrada> tablaDirecciones = new ArrayList<>();
 
-    static DatagramSocket socket;
+    static MulticastSocket socket;
 
 
 
 
     //TODO ¿Incluirlo en empezarMensajeOrdinario()?
+    @Deprecated
     static TimerTask mensajeOrdinario = new TimerTask() {
         @Override
         public void run()
         {
             Paquete p = new Paquete(2, tablaDirecciones.size());
-            for(Entrada e : tablaDirecciones)
-                p.addEntrada(e);
+            tablaDirecciones.forEach(p::addEntrada);
             try{
                 socket.send(p.generarDatagramPacket());
             } catch (IOException e) {
@@ -39,21 +39,21 @@ class TimerEx {
 
     public DatagramPacket mensajeOrdinario(){
         Paquete p = new Paquete(2, tablaDirecciones.size());
-        for(Entrada e : tablaDirecciones)
-            p.addEntrada(e);
+        tablaDirecciones.forEach(p::addEntrada);
         return p.generarDatagramPacket();
     }
 
     public void setPuerto(int puerto){
         try {
-            socket = new DatagramSocket(puerto);
+            socket = new MulticastSocket(puerto);
         } catch (SocketException e) {
             System.err.println("No se pudo acceder al puerto "+puerto);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    public void escucharPuerto(int puerto) throws IOException {
-        MulticastSocket socket = new MulticastSocket(puerto);
+    public void escucharPuerto() throws IOException {
         socket.joinGroup(InetAddress.getByName("224.0.0.9."));
         //Escuchamos el puerto hasta que se cumpla el timeout (30s)
         //TODO NO se deben utilizar excepciones para controlar el flujo normal de un programa, ¿cambiar esto?
@@ -72,25 +72,12 @@ class TimerEx {
     }
 
     public void procesarPaquete(DatagramPacket paqueteRecibido){
-
-
-
-
-
-        //Nos preparamos para recibir una mensaje de 256 bytes
-        //byte[] mensaje_bytes = new byte[256];
-        //mensaje_bytes = new byte[256];
-        //Creamos un contenedor de datagrama, el buffer será el array mensaje_bytes
-        //DatagramPacket paqueteRecibido = new DatagramPacket(mensaje_bytes,256);
-
         byte[] p = paqueteRecibido.getData();
-
         if(p[0]==1){ //Es una pregunta
             //TODO ¿Correcta la comprobación de length?
             if(p.length==24&p[4]==0 & p[23]==16){//Es una petición para enviar toda la tabla
                 Paquete enviar = new Paquete(2, tablaDirecciones.size());
-                for(Entrada e : tablaDirecciones)
-                    enviar.addEntrada(e);
+                tablaDirecciones.forEach(enviar::addEntrada);
                //TODO mejorar el envio del paquete, ya que se duplica el código
                 try {
                     socket.send(enviar.generarDatagramPacket(paqueteRecibido.getAddress(),paqueteRecibido.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
@@ -122,6 +109,61 @@ class TimerEx {
 
         }
         if(p[0]==2){ //Es una respuesta
+            Paquete recibido = new Paquete(p);
+            /*
+            Comprobar cabecera:
+            -IPv4 origen perteneciente a una ruta conectada
+            -Puerto de llegada por 520 (puerto RIP)
+            -IPv4 que no sea la nuestra
+             */
+            for(Entrada e : recibido.getEntradas()){
+                int metrica = e.metrica;
+                int index=tablaDirecciones.indexOf(e);
+                /*--Comproción de  entrada--*/
+                //Comprobar IPv4 válida
+                if(metrica<0 || metrica>16) continue;
+                /*--FIN de comporbacion--*/
+                metrica+=1; if(metrica>16) metrica = 16;
+
+                if(index==-1){ //No existía la ruta
+                    e.metrica=(byte)metrica;
+                    e.nextHoop=paqueteRecibido.getAddress().getAddress();
+                    //TODO flag cambiado
+                    //TODO timeout
+                    tablaDirecciones.add(e);
+                }else{ //Existe la ruta
+                    Entrada eVieja = tablaDirecciones.get(index);
+                    if(e.nextHoop == eVieja.nextHoop){ //Viene del mismo router, por lo tanto es la misma ruta
+                        /*TODO reset Timeout*/
+                        if(metrica!=eVieja.metrica) e.metrica=(byte)metrica;
+                    }else{
+                        if(metrica<eVieja.metrica){
+                            e.metrica=(byte)metrica;
+                            e.nextHoop=eVieja.nextHoop;
+                        }
+                        if(metrica==eVieja.metrica){
+                            /*TODO Heuristica
+                           If the new metric is the same as the old one, it is simplest to do
+                           nothing further (beyond re-initializing the timeout, as specified
+                           above); but, there is a heuristic which could be applied.  Normally,
+                           it is senseless to replace a route if the new route has the same
+                           metric as the existing route; this would cause the route to bounce
+                           back and forth, which would generate an intolerable number of
+                           triggered updates.  However, if the existing route is showing signs
+                           of timing out, it may be better to switch to an equally-good
+                           alternative route immediately, rather than waiting for the timeout to
+                           happen.  Therefore, if the new metric is the same as the old one,
+                           examine the timeout for the existing route.  If it is at least
+                           halfway to the expiration point, switch to the new route.  This
+                           heuristic is optional, but highly recommended.
+                             */
+                        }
+                    }
+                tablaDirecciones.add(index,e); //Añadimos la entrada actualizada
+                }
+
+
+            }
 
         }
     }
@@ -167,6 +209,7 @@ class TimerEx {
     /**
      * Lanza un mensaje ordinario cada 30 segundos
      */
+    @Deprecated
     public static void empezarMensajesOrdinarios(){
         Timer cada30segundos = new Timer();
         cada30segundos.schedule(mensajeOrdinario,10,3000);

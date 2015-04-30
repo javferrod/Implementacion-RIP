@@ -17,9 +17,12 @@ public class Paquete {
         mensaje.put(3, (byte) 0);                        //Relleno
     }
     Paquete(byte[] mensaje){
-        if((mensaje.length-4)%20!=0) return;
+        if((mensaje.length-4)%20!=0) return; //TODO como transmitirselo a la clase que llaam? !=null?
         this.mensaje=ByteBuffer.wrap(mensaje);
     }
+
+
+
     ArrayList<Entrada> getEntradas(){
         ArrayList<Entrada> entradas= new ArrayList<>();
         for (int j = 0; j <= (mensaje.limit()-4)/20; j++) {

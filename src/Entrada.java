@@ -1,5 +1,6 @@
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 public class Entrada {
     //TODO No se usa para no duplicar datos, ¿Se debería usar y pasar a un ArrayList?
@@ -43,9 +44,9 @@ public class Entrada {
             e.printStackTrace();
         }
 
+
         this.mascara = direccionMascara.getAddress();
 
-        System.out.println(metrica);
         this.metrica = (byte) metrica;
     }
 
@@ -69,8 +70,6 @@ public class Entrada {
         if(!(o instanceof Entrada)) return false;
 
         Entrada e = (Entrada) o;
-        if(e.IPv4.equals(e.IPv4) & e.mascara.equals(mascara))
-            return true; //TODO mascara debe de comprobarse si es menor, porque entonces si la contiene ¿No?
-        return false;
+        return Arrays.equals(this.IPv4, e.IPv4) & Arrays.equals(this.mascara, mascara);
     }
 }
