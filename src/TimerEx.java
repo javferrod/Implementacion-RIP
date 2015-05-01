@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -11,7 +12,7 @@ class TimerEx {
 
     ArrayList<String> routers = new ArrayList<>();
     ArrayList<String> rutasConectadas = new ArrayList<>();
-
+    InetAddress IP;
     static ArrayList<Entrada> tablaDirecciones = new ArrayList<>();
 
     static MulticastSocket socket;
@@ -38,6 +39,10 @@ class TimerEx {
 
 
     public DatagramPacket mensajeOrdinario(){
+        System.out.println("[Mensaje ordinario] Enviando tabla de encaminamiento...");
+        System.out.println("Estado de la tabla:");
+        tablaDirecciones.forEach(System.out::println);
+        System.out.println("-----------------------------------");
         Paquete p = new Paquete(2, tablaDirecciones.size());
         tablaDirecciones.forEach(p::addEntrada);
         return p.generarDatagramPacket();
@@ -54,24 +59,36 @@ class TimerEx {
     }
 
     public void escucharPuerto() throws IOException {
-        socket.joinGroup(InetAddress.getByName("224.0.0.9."));
+        socket.joinGroup(InetAddress.getByName("224.0.0.9"));
         //Escuchamos el puerto hasta que se cumpla el timeout (30s)
         //TODO NO se deben utilizar excepciones para controlar el flujo normal de un programa, ¿cambiar esto?
+        socket.setSoTimeout(30000);
+        socket.setLoopbackMode(true);
+        Random r = new Random();
+        DatagramPacket paqueteRecibido = new DatagramPacket(new byte[504], 504); //TODO Length del buffer
         while(true) {
-            assert socket != null;
-            socket.setSoTimeout(3000);
-            DatagramPacket paqueteRecibido = new DatagramPacket(new byte[256], 256); //TODO Length del buffer
-            try {
-                socket.receive(paqueteRecibido);
-            } catch (SocketTimeoutException e) {
-                socket.send(mensajeOrdinario());
-                continue;
+                assert socket != null;
+
+                try {
+                    socket.receive(paqueteRecibido);
+                    procesarPaquete(paqueteRecibido);
+                    continue;
+
+                } catch (SocketTimeoutException e) {
+                    socket.send(mensajeOrdinario());
+
+                }
+
+            int i = 30000+r.nextInt(5000);
+            System.err.println("Reiniciando: " + i);
+            socket.setSoTimeout(i);
             }
-            procesarPaquete(paqueteRecibido);
-        }
+
     }
 
     public void procesarPaquete(DatagramPacket paqueteRecibido){
+        System.err.println(paqueteRecibido.getPort());
+        System.out.println("INFO: Procesando paquete recibido");
         byte[] p = paqueteRecibido.getData();
         if(p[0]==1){ //Es una pregunta
             //TODO ¿Correcta la comprobación de length?
@@ -115,8 +132,11 @@ class TimerEx {
             -IPv4 origen perteneciente a una ruta conectada
             -Puerto de llegada por 520 (puerto RIP)
             -IPv4 que no sea la nuestra
+
              */
+
             for(Entrada e : recibido.getEntradas()){
+                System.out.println("INFO: Procesando entrada del paquete recibido: "+e);
                 int metrica = e.metrica;
                 int index=tablaDirecciones.indexOf(e);
                 /*--Comproción de  entrada--*/
@@ -126,20 +146,22 @@ class TimerEx {
                 metrica+=1; if(metrica>16) metrica = 16;
 
                 if(index==-1){ //No existía la ruta
+                    System.err.println("NO existe");
                     e.metrica=(byte)metrica;
                     e.nextHoop=paqueteRecibido.getAddress().getAddress();
                     //TODO flag cambiado
                     //TODO timeout
                     tablaDirecciones.add(e);
                 }else{ //Existe la ruta
+                    System.err.println("existe");
                     Entrada eVieja = tablaDirecciones.get(index);
-                    if(e.nextHoop == eVieja.nextHoop){ //Viene del mismo router, por lo tanto es la misma ruta
+                    if(paqueteRecibido.getAddress().getAddress().equals(eVieja.nextHoop)){ //Viene del mismo router, por lo tanto es la misma ruta
                         /*TODO reset Timeout*/
                         if(metrica!=eVieja.metrica) e.metrica=(byte)metrica;
                     }else{
                         if(metrica<eVieja.metrica){
                             e.metrica=(byte)metrica;
-                            e.nextHoop=eVieja.nextHoop;
+                            e.nextHoop=paqueteRecibido.getAddress().getAddress();
                         }
                         if(metrica==eVieja.metrica){
                             /*TODO Heuristica
@@ -159,10 +181,9 @@ class TimerEx {
                              */
                         }
                     }
+
                 tablaDirecciones.add(index,e); //Añadimos la entrada actualizada
                 }
-
-
             }
 
         }
@@ -175,16 +196,22 @@ class TimerEx {
         Se rechazarán aquellos que no tengan 4 bloques de números (IP)
         TODO ¿Rechazar aquellos que no tengan de 1 a 4 números por bloque?
         */
+
         File dir = new File("src");
+        System.out.println(dir.getAbsolutePath());
         File[] archivosEncontrados = dir.listFiles((directorio, nombre) -> {
             return nombre.matches("ripconf-([0-9]+\\.){4}txt");
         });
-
-        //Si no se encuentra ningún archivo, salir
+    //Si no se encuentra ningún archivo, salir
         if(archivosEncontrados.length==0){
             System.err.println("No hay archivo de configuracion");
             System.err.println("Saliendo...");
             return;
+        }
+        try {
+            IP = InetAddress.getByName(archivosEncontrados[0].getName().split("-|.txt")[1]);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
         }
 
         //Abrimos el archivo
@@ -192,7 +219,8 @@ class TimerEx {
             String linea;
             while ( (linea = r.readLine())!= null) {
                 if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}$")){
-                    routers.add(linea); //Corresponde a un router cercano
+                    tablaDirecciones.add(new Entrada(linea,"32",1)); //TODO ¿Máscara y metrica correcta para una ruta conectada?
+                    //routers.add(linea); //Corresponde a un router cercano
                 }
                 if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}\\/[0-9]{1,2}$")){
                     String[] s = linea.split("/");

@@ -8,7 +8,7 @@ public class Rip {
 
         TimerEx database = new TimerEx();
         database.leerConfiguracion();
-        database.setPuerto(5000);
+        database.setPuerto(7000);
         try {
             database.escucharPuerto();
         } catch (IOException e) {

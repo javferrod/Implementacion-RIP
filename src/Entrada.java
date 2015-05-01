@@ -52,15 +52,18 @@ public class Entrada {
 
     @Override
     public String toString() {
+        InetAddress IP = null;
         InetAddress mask = null;
         InetAddress nextH = null;
         try {
-            mask = InetAddress.getByAddress(mascara);
-            nextH = InetAddress.getByAddress(nextHoop);
+            IP = InetAddress.getByAddress(this.IPv4);
+            mask = InetAddress.getByAddress(this.mascara);
+            if(this.nextHoop!=null)
+            nextH = InetAddress.getByAddress(this.nextHoop);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        return mask + " NextHoop: " + nextH;
+        return "IP: "+IP+" Máscara: "+mask + " NextHoop: " + nextH+" Métrica: "+this.metrica;
 
     }
 
@@ -70,6 +73,11 @@ public class Entrada {
         if(!(o instanceof Entrada)) return false;
 
         Entrada e = (Entrada) o;
-        return Arrays.equals(this.IPv4, e.IPv4) & Arrays.equals(this.mascara, mascara);
+        return Arrays.equals(this.IPv4, e.IPv4) & Arrays.equals(this.mascara, e.mascara); //TODO ¿Como compararlo?
+    }
+
+    @Override
+    public int hashCode() {
+        return IPv4.hashCode()+mascara.hashCode();
     }
 }

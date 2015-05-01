@@ -25,8 +25,8 @@ public class Paquete {
 
     ArrayList<Entrada> getEntradas(){
         ArrayList<Entrada> entradas= new ArrayList<>();
-        for (int j = 0; j <= (mensaje.limit()-4)/20; j++) {
-
+        for (int j = 0; j < (mensaje.limit()-4)/20; j++) {
+            if(mensaje.get(j * 20 + 8)==(byte)0) return entradas; //Cuando no haya IPv4 significa que ya no hay más entradas
             entradas.add(new Entrada(
                     new byte[]{mensaje.get(j * 20 + 8), mensaje.get(j * 20 + 9), mensaje.get(j * 20 + 10), mensaje.get(j * 20 + 11)}, //Añade la IPv4
                     new byte[]{mensaje.get(j * 20 + 12), mensaje.get(j * 20 + 13), mensaje.get(j * 20 + 14), mensaje.get(j * 20 + 15)}, //Añade la mascara
@@ -69,13 +69,13 @@ public class Paquete {
         i++;
     }
     DatagramPacket generarDatagramPacket(InetAddress addrDestino,int puertoDestino){
-            return new DatagramPacket(mensaje.array(),(byte)mensaje.limit(), addrDestino, puertoDestino);
+            return new DatagramPacket(mensaje.array(),mensaje.limit(), addrDestino, puertoDestino);
     }
     DatagramPacket generarDatagramPacket(){
         try {
-            return this.generarDatagramPacket(InetAddress.getByName("224.0.0.9"),520);
+            return this.generarDatagramPacket(InetAddress.getByName("224.0.0.9"),7000);//TODO cambiar puerto
         } catch (UnknownHostException e) {
-            System.err.println("Direccion multicas mal"); //TODO eliminar
+            System.err.println("Direccion multicast mal"); //TODO eliminar
             return new DatagramPacket(new byte[0],1); //TODO Chapuza
         }
     }
