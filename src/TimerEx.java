@@ -19,13 +19,12 @@ enum Tipo {
 
 class TimerEx {
 
-    static MulticastSocket socket;
-    private static ArrayList<Entrada> tablaDirecciones = new ArrayList<>();
-    //Necesario para el Thread esucharPuerto
-    private static ExecutorService ejecutor = Executors.newSingleThreadExecutor();
-    private static Future<Integer> ign = ejecutor.submit(new escucharPuerto());
-    ArrayList<String> routers = new ArrayList<>();
+    private static int MENSAJEORDINARIO = 30;
     private InetAddress IP;
+
+    static MulticastSocket socket;
+    private static Tabla tabla = new Tabla();
+    ArrayList<InetAddress> routers = new ArrayList<>();
 
     public static void procesarPaquete(DatagramPacket paqueteRecibido) {
 
@@ -35,8 +34,8 @@ class TimerEx {
         if (p[0] == Tipo.REQUEST.v) {
             //TODO ¿Correcta la comprobación de length?
             if (p.length == 24 & p[4] == 0 & p[23] == 16) {//Es una petición para enviar toda la tabla
-                Paquete enviar = new Paquete(Tipo.RESPONSE, tablaDirecciones.size());
-                tablaDirecciones.forEach(enviar::addEntrada);
+                Paquete enviar = new Paquete(Tipo.RESPONSE, tabla.size());
+                tabla.forEach(enviar::addEntrada);
                 //TODO mejorar el envio del paquete, ya que se duplica el código
                 try {
                     socket.send(enviar.generarDatagramPacket(paqueteRecibido.getAddress(), paqueteRecibido.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
@@ -46,18 +45,19 @@ class TimerEx {
             } else { //Es un request para algunas entradas
                 Paquete recibido = new Paquete(p);
                 int indexEntrada = 0;
-                boolean flag = false;
+                boolean hayEntradas = false;
                 for (Entrada e : recibido.getEntradas()) {
-                    int i = tablaDirecciones.indexOf(e);
-                    if (i != -1) {//Si la tenemos en la tabla, mandamos la metrica
-                        recibido.setMetrica(indexEntrada, tablaDirecciones.get(i).metrica);
-                        flag = true;
-                    } else //¿No la tenemos? Metrica = 16
-                        recibido.setMetrica(indexEntrada, (byte) 16);
+                    Entrada eGuardada = tabla.get(e);
+                    if(tabla.get(e)!=null){ //Si la tenemos
+                        recibido.setMetrica(indexEntrada, eGuardada.metrica);
+                        hayEntradas = true;
+                    }else{ //Si no la tenemos
+                        recibido.setMetrica(indexEntrada,(byte)16);
+                    }
                     indexEntrada++;
                 }
                 //Enviamos el paquete de vuelta
-                if (flag) recibido.setCommand(Tipo.RESPONSE); //Si hay por lo menos una entrada, el paquete se envía
+                if (hayEntradas) recibido.setCommand(Tipo.RESPONSE);
                 try {
                     socket.send(recibido.generarDatagramPacket()); //TODO ¿A que dirección?
                 } catch (IOException e) {
@@ -78,24 +78,28 @@ class TimerEx {
             for (Entrada e : recibido.getEntradas()) {
                 System.out.println("INFO: Procesando entrada del paquete recibido: " + e);
                 int metrica = e.metrica;
-                int index = tablaDirecciones.indexOf(e);
-                /*--Comproción de  entrada--*/
+                int index = tabla.indexOf(e);
+                /*--Comprobación de  entrada--*/
                 //Comprobar IPv4 válida
                 if (metrica < 1 || metrica > 16) continue;
-                /*--FIN de comporbacion--*/
+                /*--FIN de comprobacion--*/
                 metrica += 1;
                 if (metrica > 16) metrica = 16;
 
-                if (index == -1) { //No existía la ruta
+                Entrada eVieja = tabla.get(e);
+
+
+
+
+                if (eVieja==null) { //No existía la ruta
                     System.err.println("NO existe");
                     e.metrica = (byte) metrica;
                     e.nextHoop = paqueteRecibido.getAddress().getAddress();
                     //TODO flag cambiado
                     //TODO timeout
-                    tablaDirecciones.add(e);
+                    tabla.add(e);
                 } else { //Existe la ruta
                     System.err.println("existe");
-                    Entrada eVieja = tablaDirecciones.get(index);
                     if (Arrays.equals(paqueteRecibido.getAddress().getAddress(), eVieja.nextHoop)) { //Viene del mismo router, por lo tanto es la misma ruta
                         /*TODO reset Timeout*/
                         if (metrica != eVieja.metrica) e.metrica = (byte) metrica;
@@ -105,24 +109,11 @@ class TimerEx {
                             e.nextHoop = paqueteRecibido.getAddress().getAddress();
                         }
                         if (metrica == eVieja.metrica) {
-                            /*TODO Heuristica
-                           If the new metric is the same as the old one, it is simplest to do
-                           nothing further (beyond re-initializing the timeout, as specified
-                           above); but, there is a heuristic which could be applied.  Normally,
-                           it is senseless to replace a route if the new route has the same
-                           metric as the existing route; this would cause the route to bounce
-                           back and forth, which would generate an intolerable number of
-                           triggered updates.  However, if the existing route is showing signs
-                           of timing out, it may be better to switch to an equally-good
-                           alternative route immediately, rather than waiting for the timeout to
-                           happen.  Therefore, if the new metric is the same as the old one,
-                           examine the timeout for the existing route.  If it is at least
-                           halfway to the expiration point, switch to the new route.  This
-                           heuristic is optional, but highly recommended.
-                             */
+                            tabla.setwithHeuristic(e);
+                            continue;
                         }
                     }
-                    tablaDirecciones.set(index, e); //Añadimos la entrada actualizada
+                    tabla.set(index, e); //Añadimos la entrada actualizada
                 }
             }
 
@@ -130,11 +121,11 @@ class TimerEx {
     }
 
     private DatagramPacket mensajeOrdinario() {
-        System.out.println("[Mensaje ordinario] Enviando tabla de encaminamiento...");
-        System.out.println("----------------ESTADO DE LA TABLA----------------");
-        tablaDirecciones.forEach(System.out::println);
-        Paquete p = new Paquete(Tipo.RESPONSE, tablaDirecciones.size());
-        tablaDirecciones.forEach(p::addEntrada);
+        System.out.println(" [Mensaje ordinario] Enviando tabla de encaminamiento...");
+        System.out.println("-------------------ESTADO DE LA TABLA-------------------");
+        tabla.forEach(System.out::println);
+        Paquete p = new Paquete(Tipo.RESPONSE, tabla.size());
+        tabla.forEach(p::addEntrada);
         return p.generarDatagramPacket();
     }
 
@@ -152,13 +143,16 @@ class TimerEx {
 
     public void start() {
         Random r = new Random();
-
+        ExecutorService ejecutor = Executors.newSingleThreadExecutor();
+        Future<Integer> ign = ejecutor.submit(new escucharPuerto());
         while (true) {
             try {
                 System.out.println("Escuchando...");
                 ign.get(r.nextInt(5) + 30, TimeUnit.SECONDS);
             } catch (TimeoutException | InterruptedException | ExecutionException ignored) {
             }
+
+
 
             try {
                 socket.send(mensajeOrdinario());
@@ -199,12 +193,11 @@ class TimerEx {
             String linea;
             while ((linea = r.readLine()) != null) {
                 if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}$")) {
-                    //tablaDirecciones.add(new Entrada(linea,"32",1)); //TODO ¿Máscara y metrica correcta para una ruta conectada?
-                    //routers.add(linea); //Corresponde a un router cercano
+                    routers.add(InetAddress.getByName(linea)); //Corresponde a un router cercano
                 }
                 if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}/[0-9]{1,2}$")) {
                     String[] s = linea.split("/");
-                    tablaDirecciones.add(new Entrada(s[0], s[1], 1));
+                    tabla.add(new Entrada(s[0], s[1], 1)); //TODO metrica = 1 para ruta conectada¿?
 
                 }
             }

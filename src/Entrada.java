@@ -7,11 +7,22 @@ public class Entrada {
     byte[] mascara = new byte[4];
     byte[] nextHoop= new byte[4];
     byte metrica;
+    boolean cambiado;
+    long timer;
+    boolean garbage;
+
 
     Entrada(byte[] IPv4,byte[] mascara,byte metrica){
         this.IPv4=IPv4;
         this.mascara=mascara;
         this.metrica=metrica;
+    }
+
+    public void timerReset(){
+        timer = System.nanoTime();
+    }
+    public boolean esRutaConectada(){
+        return this.mascara== new byte[] {(byte)0,(byte)0,(byte)0,(byte)0}; //TODO ¿isEmpty?
     }
 
     Entrada(String IPv4, String mascara,int metrica){
@@ -35,11 +46,11 @@ public class Entrada {
         }
 
 
+        assert direccionMascara != null;
         this.mascara = direccionMascara.getAddress();
 
         this.metrica = (byte) metrica;
     }
-
     @Override
     public String toString() {
         InetAddress IP = null;
