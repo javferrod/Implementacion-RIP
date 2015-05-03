@@ -73,7 +73,7 @@ public class Paquete {
     }
     DatagramPacket generarDatagramPacket(){
         try {
-            return this.generarDatagramPacket(InetAddress.getByName("224.0.0.9"),7000);//TODO cambiar puerto
+            return this.generarDatagramPacket(InetAddress.getByName("224.0.0.9"),520);//TODO cambiar puerto
         } catch (UnknownHostException e) {
             System.err.println("Direccion multicast mal"); //TODO eliminar
             return new DatagramPacket(new byte[0],1); //TODO Chapuza

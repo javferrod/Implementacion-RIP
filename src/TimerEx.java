@@ -50,7 +50,8 @@ class TimerEx {
 
     public void setPuerto(int puerto){
         try {
-            socket = new MulticastSocket(puerto);
+            socket = new MulticastSocket(puerto);//TODO no carga el puerto
+            //socket.bind(new InetSocketAddress("localhost",puerto));
         } catch (SocketException e) {
             System.err.println("No se pudo acceder al puerto "+puerto);
         } catch (IOException e) {
@@ -64,6 +65,7 @@ class TimerEx {
         //TODO NO se deben utilizar excepciones para controlar el flujo normal de un programa, ¿cambiar esto?
         socket.setSoTimeout(30000);
         socket.setLoopbackMode(true);
+        System.out.println("Escuchando puerto "+socket.getLocalPort());
         Random r = new Random();
         DatagramPacket paqueteRecibido = new DatagramPacket(new byte[504], 504); //TODO Length del buffer
         while(true) {
@@ -87,6 +89,7 @@ class TimerEx {
     }
 
     public void procesarPaquete(DatagramPacket paqueteRecibido){
+
         System.err.println(paqueteRecibido.getPort());
         System.out.println("INFO: Procesando paquete recibido");
         byte[] p = paqueteRecibido.getData();
@@ -136,12 +139,17 @@ class TimerEx {
              */
 
             for(Entrada e : recibido.getEntradas()){
+                try {
+                    System.err.println(socket.getSoTimeout());
+                } catch (SocketException ex) {
+                    ex.printStackTrace();
+                }
                 System.out.println("INFO: Procesando entrada del paquete recibido: "+e);
                 int metrica = e.metrica;
                 int index=tablaDirecciones.indexOf(e);
                 /*--Comproción de  entrada--*/
                 //Comprobar IPv4 válida
-                if(metrica<0 || metrica>16) continue;
+                if(metrica<1 || metrica>16) continue;
                 /*--FIN de comporbacion--*/
                 metrica+=1; if(metrica>16) metrica = 16;
 
@@ -182,7 +190,7 @@ class TimerEx {
                         }
                     }
 
-                tablaDirecciones.add(index,e); //Añadimos la entrada actualizada
+                tablaDirecciones.set(index, e); //Añadimos la entrada actualizada
                 }
             }
 
@@ -197,8 +205,7 @@ class TimerEx {
         TODO ¿Rechazar aquellos que no tengan de 1 a 4 números por bloque?
         */
 
-        File dir = new File("src");
-        System.out.println(dir.getAbsolutePath());
+        File dir = new File("./");
         File[] archivosEncontrados = dir.listFiles((directorio, nombre) -> {
             return nombre.matches("ripconf-([0-9]+\\.){4}txt");
         });
@@ -208,6 +215,7 @@ class TimerEx {
             System.err.println("Saliendo...");
             return;
         }
+        System.out.println("Cargando archivo de configuración: "+archivosEncontrados[0].getName());
         try {
             IP = InetAddress.getByName(archivosEncontrados[0].getName().split("-|.txt")[1]);
         } catch (UnknownHostException e) {
