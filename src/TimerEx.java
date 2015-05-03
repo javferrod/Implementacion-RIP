@@ -4,122 +4,60 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.*;
+
+enum Tipo {
+    RESPONSE(2), REQUEST(1);
+    public final int v; // Variable interna donde almacenaremos la capacidad
+
+    Tipo(int v) {
+        this.v = v;
+    }
+}
 
 class TimerEx {
 
-    ArrayList<String> routers = new ArrayList<>();
-    ArrayList<String> rutasConectadas = new ArrayList<>();
-    InetAddress IP;
-    static ArrayList<Entrada> tablaDirecciones = new ArrayList<>();
-
     static MulticastSocket socket;
+    private static ArrayList<Entrada> tablaDirecciones = new ArrayList<>();
+    //Necesario para el Thread esucharPuerto
+    private static ExecutorService ejecutor = Executors.newSingleThreadExecutor();
+    private static Future<Integer> ign = ejecutor.submit(new escucharPuerto());
+    ArrayList<String> routers = new ArrayList<>();
+    private InetAddress IP;
 
+    public static void procesarPaquete(DatagramPacket paqueteRecibido) {
 
-
-
-    //TODO ¿Incluirlo en empezarMensajeOrdinario()?
-    @Deprecated
-    static TimerTask mensajeOrdinario = new TimerTask() {
-        @Override
-        public void run()
-        {
-            Paquete p = new Paquete(2, tablaDirecciones.size());
-            tablaDirecciones.forEach(p::addEntrada);
-            try{
-                socket.send(p.generarDatagramPacket());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
-
-
-    public DatagramPacket mensajeOrdinario(){
-        System.out.println("[Mensaje ordinario] Enviando tabla de encaminamiento...");
-        System.out.println("Estado de la tabla:");
-        tablaDirecciones.forEach(System.out::println);
-        System.out.println("-----------------------------------");
-        Paquete p = new Paquete(2, tablaDirecciones.size());
-        tablaDirecciones.forEach(p::addEntrada);
-        return p.generarDatagramPacket();
-    }
-
-    public void setPuerto(int puerto){
-        try {
-            socket = new MulticastSocket(puerto);//TODO no carga el puerto
-            //socket.bind(new InetSocketAddress("localhost",puerto));
-        } catch (SocketException e) {
-            System.err.println("No se pudo acceder al puerto "+puerto);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void escucharPuerto() throws IOException {
-        socket.joinGroup(InetAddress.getByName("224.0.0.9"));
-        //Escuchamos el puerto hasta que se cumpla el timeout (30s)
-        //TODO NO se deben utilizar excepciones para controlar el flujo normal de un programa, ¿cambiar esto?
-        socket.setSoTimeout(30000);
-        socket.setLoopbackMode(true);
-        System.out.println("Escuchando puerto "+socket.getLocalPort());
-        Random r = new Random();
-        DatagramPacket paqueteRecibido = new DatagramPacket(new byte[504], 504); //TODO Length del buffer
-        while(true) {
-                assert socket != null;
-
-                try {
-                    socket.receive(paqueteRecibido);
-                    procesarPaquete(paqueteRecibido);
-                    continue;
-
-                } catch (SocketTimeoutException e) {
-                    socket.send(mensajeOrdinario());
-
-                }
-
-            int i = 30000+r.nextInt(5000);
-            System.err.println("Reiniciando: " + i);
-            socket.setSoTimeout(i);
-            }
-
-    }
-
-    public void procesarPaquete(DatagramPacket paqueteRecibido){
-
-        System.err.println(paqueteRecibido.getPort());
         System.out.println("INFO: Procesando paquete recibido");
         byte[] p = paqueteRecibido.getData();
-        if(p[0]==1){ //Es una pregunta
+
+        if (p[0] == Tipo.REQUEST.v) {
             //TODO ¿Correcta la comprobación de length?
-            if(p.length==24&p[4]==0 & p[23]==16){//Es una petición para enviar toda la tabla
-                Paquete enviar = new Paquete(2, tablaDirecciones.size());
+            if (p.length == 24 & p[4] == 0 & p[23] == 16) {//Es una petición para enviar toda la tabla
+                Paquete enviar = new Paquete(Tipo.RESPONSE, tablaDirecciones.size());
                 tablaDirecciones.forEach(enviar::addEntrada);
-               //TODO mejorar el envio del paquete, ya que se duplica el código
+                //TODO mejorar el envio del paquete, ya que se duplica el código
                 try {
-                    socket.send(enviar.generarDatagramPacket(paqueteRecibido.getAddress(),paqueteRecibido.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+                    socket.send(enviar.generarDatagramPacket(paqueteRecibido.getAddress(), paqueteRecibido.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-            else{ //Es un request para algunas entradas
+            } else { //Es un request para algunas entradas
                 Paquete recibido = new Paquete(p);
-                int indexEntrada=0;
+                int indexEntrada = 0;
                 boolean flag = false;
-                for(Entrada e: recibido.getEntradas()){
-                    int i=tablaDirecciones.indexOf(e);
-                    if(i!=-1) {//Si la tenemos en la tabla, le mandamos la metrica
+                for (Entrada e : recibido.getEntradas()) {
+                    int i = tablaDirecciones.indexOf(e);
+                    if (i != -1) {//Si la tenemos en la tabla, mandamos la metrica
                         recibido.setMetrica(indexEntrada, tablaDirecciones.get(i).metrica);
                         flag = true;
-                    }
-                    else //¿No la tenemos? Metrica = 16
-                        recibido.setMetrica(indexEntrada,(byte)16);
+                    } else //¿No la tenemos? Metrica = 16
+                        recibido.setMetrica(indexEntrada, (byte) 16);
+                    indexEntrada++;
                 }
                 //Enviamos el paquete de vuelta
-                if(flag) recibido.setCommand(2); //Si hay por lo menos una entrada, el paquete se envía
+                if (flag) recibido.setCommand(Tipo.RESPONSE); //Si hay por lo menos una entrada, el paquete se envía
                 try {
                     socket.send(recibido.generarDatagramPacket()); //TODO ¿A que dirección?
                 } catch (IOException e) {
@@ -128,7 +66,7 @@ class TimerEx {
             }
 
         }
-        if(p[0]==2){ //Es una respuesta
+        if (p[0] == Tipo.RESPONSE.v) {
             Paquete recibido = new Paquete(p);
             /*
             Comprobar cabecera:
@@ -137,41 +75,36 @@ class TimerEx {
             -IPv4 que no sea la nuestra
 
              */
-
-            for(Entrada e : recibido.getEntradas()){
-                try {
-                    System.err.println(socket.getSoTimeout());
-                } catch (SocketException ex) {
-                    ex.printStackTrace();
-                }
-                System.out.println("INFO: Procesando entrada del paquete recibido: "+e);
+            for (Entrada e : recibido.getEntradas()) {
+                System.out.println("INFO: Procesando entrada del paquete recibido: " + e);
                 int metrica = e.metrica;
-                int index=tablaDirecciones.indexOf(e);
+                int index = tablaDirecciones.indexOf(e);
                 /*--Comproción de  entrada--*/
                 //Comprobar IPv4 válida
-                if(metrica<1 || metrica>16) continue;
+                if (metrica < 1 || metrica > 16) continue;
                 /*--FIN de comporbacion--*/
-                metrica+=1; if(metrica>16) metrica = 16;
+                metrica += 1;
+                if (metrica > 16) metrica = 16;
 
-                if(index==-1){ //No existía la ruta
+                if (index == -1) { //No existía la ruta
                     System.err.println("NO existe");
-                    e.metrica=(byte)metrica;
-                    e.nextHoop=paqueteRecibido.getAddress().getAddress();
+                    e.metrica = (byte) metrica;
+                    e.nextHoop = paqueteRecibido.getAddress().getAddress();
                     //TODO flag cambiado
                     //TODO timeout
                     tablaDirecciones.add(e);
-                }else{ //Existe la ruta
+                } else { //Existe la ruta
                     System.err.println("existe");
                     Entrada eVieja = tablaDirecciones.get(index);
-                    if(paqueteRecibido.getAddress().getAddress().equals(eVieja.nextHoop)){ //Viene del mismo router, por lo tanto es la misma ruta
+                    if (Arrays.equals(paqueteRecibido.getAddress().getAddress(), eVieja.nextHoop)) { //Viene del mismo router, por lo tanto es la misma ruta
                         /*TODO reset Timeout*/
-                        if(metrica!=eVieja.metrica) e.metrica=(byte)metrica;
-                    }else{
-                        if(metrica<eVieja.metrica){
-                            e.metrica=(byte)metrica;
-                            e.nextHoop=paqueteRecibido.getAddress().getAddress();
+                        if (metrica != eVieja.metrica) e.metrica = (byte) metrica;
+                    } else {
+                        if (metrica < eVieja.metrica) {
+                            e.metrica = (byte) metrica;
+                            e.nextHoop = paqueteRecibido.getAddress().getAddress();
                         }
-                        if(metrica==eVieja.metrica){
+                        if (metrica == eVieja.metrica) {
                             /*TODO Heuristica
                            If the new metric is the same as the old one, it is simplest to do
                            nothing further (beyond re-initializing the timeout, as specified
@@ -189,15 +122,54 @@ class TimerEx {
                              */
                         }
                     }
-
-                tablaDirecciones.set(index, e); //Añadimos la entrada actualizada
+                    tablaDirecciones.set(index, e); //Añadimos la entrada actualizada
                 }
             }
 
         }
     }
 
-    public void leerConfiguracion (){
+    private DatagramPacket mensajeOrdinario() {
+        System.out.println("[Mensaje ordinario] Enviando tabla de encaminamiento...");
+        System.out.println("----------------ESTADO DE LA TABLA----------------");
+        tablaDirecciones.forEach(System.out::println);
+        Paquete p = new Paquete(Tipo.RESPONSE, tablaDirecciones.size());
+        tablaDirecciones.forEach(p::addEntrada);
+        return p.generarDatagramPacket();
+    }
+
+    public void setPuerto(int puerto) {
+        try {
+            socket = new MulticastSocket(puerto);
+            socket.joinGroup(InetAddress.getByName("224.0.0.9"));
+            socket.setLoopbackMode(true);
+        } catch (SocketException e) {
+            System.err.println("No se pudo acceder al puerto " + puerto);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void start() {
+        Random r = new Random();
+
+        while (true) {
+            try {
+                System.out.println("Escuchando...");
+                ign.get(r.nextInt(5) + 30, TimeUnit.SECONDS);
+            } catch (TimeoutException | InterruptedException | ExecutionException ignored) {
+            }
+
+            try {
+                socket.send(mensajeOrdinario());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    public void leerConfiguracion() {
 
 
         /*Se buscan archivos con el formato ripconf-A.B.C.D.txt
@@ -209,13 +181,13 @@ class TimerEx {
         File[] archivosEncontrados = dir.listFiles((directorio, nombre) -> {
             return nombre.matches("ripconf-([0-9]+\\.){4}txt");
         });
-    //Si no se encuentra ningún archivo, salir
-        if(archivosEncontrados.length==0){
+        //Si no se encuentra ningún archivo, salir
+        if (archivosEncontrados.length == 0) {
             System.err.println("No hay archivo de configuracion");
             System.err.println("Saliendo...");
             return;
         }
-        System.out.println("Cargando archivo de configuración: "+archivosEncontrados[0].getName());
+        System.out.println("Cargando archivo de configuración: " + archivosEncontrados[0].getName());
         try {
             IP = InetAddress.getByName(archivosEncontrados[0].getName().split("-|.txt")[1]);
         } catch (UnknownHostException e) {
@@ -225,12 +197,12 @@ class TimerEx {
         //Abrimos el archivo
         try (BufferedReader r = new BufferedReader(new FileReader(archivosEncontrados[0]))) {
             String linea;
-            while ( (linea = r.readLine())!= null) {
-                if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}$")){
-                    tablaDirecciones.add(new Entrada(linea,"32",1)); //TODO ¿Máscara y metrica correcta para una ruta conectada?
+            while ((linea = r.readLine()) != null) {
+                if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}$")) {
+                    //tablaDirecciones.add(new Entrada(linea,"32",1)); //TODO ¿Máscara y metrica correcta para una ruta conectada?
                     //routers.add(linea); //Corresponde a un router cercano
                 }
-                if(linea.matches("^([0-9]+\\.){3}[0-9]{1,4}\\/[0-9]{1,2}$")){
+                if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}/[0-9]{1,2}$")) {
                     String[] s = linea.split("/");
                     tablaDirecciones.add(new Entrada(s[0], s[1], 1));
 
@@ -242,13 +214,17 @@ class TimerEx {
         }
     }
 
-    /**
-     * Lanza un mensaje ordinario cada 30 segundos
-     */
-    @Deprecated
-    public static void empezarMensajesOrdinarios(){
-        Timer cada30segundos = new Timer();
-        cada30segundos.schedule(mensajeOrdinario,10,3000);
-    }
 
+}
+
+class escucharPuerto implements Callable<Integer> {
+
+    @Override
+    public Integer call() throws Exception {
+        while (true) {
+            DatagramPacket paqueteRecibido = new DatagramPacket(new byte[504], 504); //TODO Length del buffer
+            TimerEx.socket.receive(paqueteRecibido);
+            TimerEx.procesarPaquete(paqueteRecibido);
+        }
+    }
 }

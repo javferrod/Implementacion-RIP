@@ -3,7 +3,6 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 
 public class Entrada {
-    //TODO No se usa para no duplicar datos, ¿Se debería usar y pasar a un ArrayList?
     byte[] IPv4 = new byte[4];
     byte[] mascara = new byte[4];
     byte[] nextHoop= new byte[4];
@@ -14,16 +13,7 @@ public class Entrada {
         this.mascara=mascara;
         this.metrica=metrica;
     }
-    Entrada(String IPv4, String mascara,String nextHoop,int metrica){
-        this(IPv4,mascara, metrica);
 
-        String[] nextHoop1 = nextHoop.split("\\.");
-        for (int i = 0; i < 4; i++) {
-            this.nextHoop[i] = (byte) (int) Integer.valueOf(nextHoop1[i]);
-        }
-
-
-    }
     Entrada(String IPv4, String mascara,int metrica){
 
         try {
@@ -78,6 +68,6 @@ public class Entrada {
 
     @Override
     public int hashCode() {
-        return IPv4.hashCode()+mascara.hashCode();
+        return Arrays.hashCode(IPv4) + Arrays.hashCode(mascara);
     }
 }

@@ -5,13 +5,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 public class Paquete {
-    ByteBuffer mensaje;
-    int i;
-    int entry;
-    Paquete(int Command,int numEntradas){
+    private ByteBuffer mensaje;
+    private int i;
+    Paquete(Tipo t,int numEntradas){
         mensaje = ByteBuffer.allocate(4+20*numEntradas);
        /*-----HEADER----*/
-        mensaje.put(0, (byte) 2);                        //Command = 2 (response)
+        mensaje.put(0, (byte) t.v);                      //Command = 2 (response)
         mensaje.put(1, (byte) 2);                        //Version de RIP
         mensaje.put(2, (byte) 0);                        //Relleno
         mensaje.put(3, (byte) 0);                        //Relleno
@@ -36,36 +35,33 @@ public class Paquete {
     }
 
     void setMetrica(int index, byte metrica){
-        mensaje.put(20*(i-1)+23,metrica);
+        mensaje.put(20*(index-1)+23,metrica);
     }
-    void setCommand(int command){
-        mensaje.put(0,(byte)command);
+    void setCommand(Tipo t){
+        mensaje.put(0,(byte)t.v);
     }
     void addEntrada(Entrada e){
-        this.add(e.IPv4,e.mascara,e.nextHoop,e.metrica);
-    }
-    void add(byte[] IPv4,byte[] mascara, byte[] nextHoop,byte metric){ //TODO Si no se va a emplear, borrarlo y incluirlo en addEntrada
         /*--Entry table--*/
         mensaje.put(4+i*20,(byte)0);        //Address family
         mensaje.put(5+i*20,(byte)2);        //TODO http://tools.ietf.org/html/rfc1058 dice que 2 (¿?)
         mensaje.put(6+i*20,(byte)0);        //Route tag
         mensaje.put(7+i*20,(byte)0);
-        mensaje.put(8+i*20,IPv4[0]);        //IPv4 address
-        mensaje.put(9+i*20,IPv4[1]);
-        mensaje.put(10+i*20,IPv4[2]);
-        mensaje.put(11+i*20,IPv4[3]);
-        mensaje.put(12+i*20,mascara[0]);       //Subnet mask
-        mensaje.put(13+i*20,mascara[1]);
-        mensaje.put(14+i*20,mascara[2]);
-        mensaje.put(15+i*20,mascara[3]);
-        mensaje.put(16+i*20,nextHoop[0]);   //Next hop
-        mensaje.put(17+i*20,nextHoop[1]);
-        mensaje.put(18+i*20,nextHoop[2]);
-        mensaje.put(19+i*20,nextHoop[3]);
+        mensaje.put(8+i*20,e.IPv4[0]);        //IPv4 address
+        mensaje.put(9+i*20,e.IPv4[1]);
+        mensaje.put(10+i*20,e.IPv4[2]);
+        mensaje.put(11+i*20,e.IPv4[3]);
+        mensaje.put(12+i*20,e.mascara[0]);       //Subnet mask
+        mensaje.put(13+i*20,e.mascara[1]);
+        mensaje.put(14+i*20,e.mascara[2]);
+        mensaje.put(15+i*20,e.mascara[3]);
+        mensaje.put(16+i*20,e.nextHoop[0]);   //Next hop
+        mensaje.put(17+i*20,e.nextHoop[1]);
+        mensaje.put(18+i*20,e.nextHoop[2]);
+        mensaje.put(19+i*20,e.nextHoop[3]);
         mensaje.put(20+i*20,(byte)0);       //Metric
         mensaje.put(21+i*20,(byte)0);
         mensaje.put(22+i*20,(byte)0);
-        mensaje.put(23+i*20,metric);
+        mensaje.put(23+i*20,e.metrica);
         i++;
     }
     DatagramPacket generarDatagramPacket(InetAddress addrDestino,int puertoDestino){
