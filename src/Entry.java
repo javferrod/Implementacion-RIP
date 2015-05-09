@@ -2,30 +2,29 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-public class Entrada {
+public class Entry {
     byte[] IPv4 = new byte[4];
     byte[] mascara = new byte[4];
-    byte[] nextHoop= new byte[4];
+    byte[] nextHoop = new byte[4];
     byte metrica;
-    boolean cambiado;
     long timer;
     boolean garbage;
 
 
-    Entrada(byte[] IPv4,byte[] mascara,byte metrica){
+    Entry(byte[] IPv4, byte[] mascara, byte metrica){
         this.IPv4=IPv4;
         this.mascara=mascara;
         this.metrica=metrica;
     }
 
-    public void timerReset(){
+    public void resetTimer(){
         timer = System.nanoTime();
     }
-    public boolean esRutaConectada(){
-        return this.mascara== new byte[] {(byte)0,(byte)0,(byte)0,(byte)0}; //TODO ¿isEmpty?
+    public boolean isDirectConnected(){
+        return Arrays.equals(nextHoop,new byte[4]); //TODO ¿isEmpty?
     }
 
-    Entrada(String IPv4, String mascara,int metrica){
+    Entry(String IPv4, String mask, int metric){
 
         try {
             this.IPv4=InetAddress.getByName(IPv4).getAddress();
@@ -33,23 +32,23 @@ public class Entrada {
             System.err.println("IP no cumple el formato IPv4: "+ IPv4);
         }
 
-        int mascara1 = 0xffffffff << (32 - Integer.valueOf(mascara));
+        int mascara1 = 0xffffffff << (32 - Integer.valueOf(mask));
 
         byte[] mascaraBytes = new byte[]{
                 (byte)(mascara1 >>> 24), (byte)(mascara1 >> 16 & 0xff), (byte)(mascara1 >> 8 & 0xff), (byte)(mascara1 & 0xff) };
 
-        InetAddress direccionMascara = null;
+        InetAddress MaksAddress = null;
         try {
-            direccionMascara = InetAddress.getByAddress(mascaraBytes);
+            MaksAddress = InetAddress.getByAddress(mascaraBytes);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
 
 
-        assert direccionMascara != null;
-        this.mascara = direccionMascara.getAddress();
+        assert MaksAddress != null;
+        this.mascara = MaksAddress.getAddress();
 
-        this.metrica = (byte) metrica;
+        this.metrica = (byte) metric;
     }
     @Override
     public String toString() {
@@ -71,9 +70,9 @@ public class Entrada {
     @Override
     public boolean equals(Object o) {
         if(o == null)                return false;
-        if(!(o instanceof Entrada)) return false;
+        if(!(o instanceof Entry)) return false;
 
-        Entrada e = (Entrada) o;
+        Entry e = (Entry) o;
         return Arrays.equals(this.IPv4, e.IPv4) & Arrays.equals(this.mascara, e.mascara); //TODO ¿Como compararlo?
     }
 

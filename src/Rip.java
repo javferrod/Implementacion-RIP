@@ -3,11 +3,11 @@ public class Rip {
 
 
     public static void main (String [ ] args) {
-        TimerEx database = new TimerEx();
-        database.leerConfiguracion();
 
-        database.setPuerto(7000 );
-        database.start();
+        RipServer RIP = new RipServer();
+        RIP.readConfig();
+        RIP.setPort(7000);
+        RIP.start();
 
 
     }

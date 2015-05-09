@@ -1,0 +1,114 @@
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.util.Arrays;
+
+public class Receiver implements Runnable {
+    
+    Table entryTable;
+    
+    Receiver(Table entryTable){
+        this.entryTable=entryTable;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            DatagramPacket paqueteRecibido = new DatagramPacket(new byte[504], 504); //TODO Length del buffer
+            try {
+                RipServer.socket.receive(paqueteRecibido);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            procesarPaquete(paqueteRecibido);
+        }
+    }
+
+    public void procesarPaquete(DatagramPacket paqueteRecibido) {
+        System.out.println("INFO: Procesando paquete recibido");
+        byte[] p = paqueteRecibido.getData();
+
+        if (p[0] == Tipo.REQUEST.v) {
+            //TODO ¿Correcta la comprobación de length?
+            if (p.length == 24 & p[4] == 0 & p[23] == 16) {//Es una petición para enviar toda la TimerEx.tabla
+                Packet enviar = new Packet(Tipo.RESPONSE, entryTable.size());
+                entryTable.forEach(enviar::addEntry);
+                try {
+                    RipServer.socket.send(enviar.getDatagramPacket(paqueteRecibido.getAddress(), paqueteRecibido.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else { //Es un request para algunas entradas
+                Packet recibido = new Packet(p);
+                int indexEntrada = 0;
+                boolean hayEntradas = false;
+                for (Entry e : recibido.getEntrys()) {
+                    Entry eGuardada = entryTable.get(e);
+                    if(entryTable.get(e)!=null){ //Si la tenemos
+                        recibido.setMetric(indexEntrada, eGuardada.metrica);
+                        hayEntradas = true;
+                    }else{ //Si no la tenemos
+                        recibido.setMetric(indexEntrada, (byte) 16);
+                    }
+                    indexEntrada++;
+                }
+                //Enviamos el paquete de vuelta
+                if (hayEntradas) recibido.setCommand(Tipo.RESPONSE);
+                //TODO enviar solo al que respondió
+            }
+
+        }
+        if (p[0] == Tipo.RESPONSE.v) {
+            Packet recibido = new Packet(p);
+            /*
+            Comprobar cabecera:
+            -IPv4 origen perteneciente a una ruta conectada
+            -Puerto de llegada por 520 (puerto RIP)
+            -IPv4 que no sea la nuestra
+
+             */
+            for (Entry e : recibido.getEntrys()) {
+                System.out.println("INFO: Procesando entrada del paquete recibido: " + e);
+                int metrica = e.metrica;
+                /*--Comprobación de  entrada--*/
+                //Comprobar IPv4 válida
+                if (metrica < 1 || metrica > 16) continue;
+                /*--FIN de comprobacion--*/
+                metrica += 1;
+                if (metrica > 16) metrica = 16;
+
+                Entry eVieja = entryTable.get(e);
+
+
+
+
+                if (eVieja==null) { //No existía la ruta
+                    System.err.println("NO existe");
+                    e.metrica = (byte) metrica;
+                    e.nextHoop = paqueteRecibido.getAddress().getAddress();
+                    entryTable.add(e);
+                } else { //Existe la ruta
+                    System.err.println("existe");
+                    if (Arrays.equals(paqueteRecibido.getAddress().getAddress(), eVieja.nextHoop)) { //Viene del mismo router, por lo tanto es la misma ruta
+                        if (metrica != eVieja.metrica) e.metrica = (byte) metrica;
+                    }
+                    else {
+                        if (metrica < eVieja.metrica) {
+                            e.metrica = (byte) metrica;
+                            e.nextHoop = paqueteRecibido.getAddress().getAddress();
+                        }
+                        if (metrica == eVieja.metrica) {
+                            entryTable.setwithHeuristic(e);
+                            continue;
+                        }
+                    }
+                    entryTable.set(e); //Añadimos la entrada actualizada
+                }
+            }
+
+        }
+
+    }
+
+
+
+}
