@@ -65,6 +65,7 @@ public class Paquete {
         i++;
     }
     DatagramPacket generarDatagramPacket(InetAddress addrDestino,int puertoDestino){
+        System.err.println(addrDestino);
             return new DatagramPacket(mensaje.array(),mensaje.limit(), addrDestino, puertoDestino);
     }
     DatagramPacket generarDatagramPacket(){

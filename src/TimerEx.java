@@ -24,7 +24,7 @@ class TimerEx {
 
     static MulticastSocket socket;
     private static Tabla tabla = new Tabla();
-    ArrayList<InetAddress> routers = new ArrayList<>();
+    private static ArrayList<InetAddress> routers = new ArrayList<>();
 
     public static void procesarPaquete(DatagramPacket paqueteRecibido) {
 
@@ -58,11 +58,7 @@ class TimerEx {
                 }
                 //Enviamos el paquete de vuelta
                 if (hayEntradas) recibido.setCommand(Tipo.RESPONSE);
-                try {
-                    socket.send(recibido.generarDatagramPacket()); //TODO ¿A que dirección?
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                    enviar(recibido);
             }
 
         }
@@ -120,13 +116,13 @@ class TimerEx {
         }
     }
 
-    private DatagramPacket mensajeOrdinario() {
+    private Paquete mensajeOrdinario() {
         System.out.println(" [Mensaje ordinario] Enviando tabla de encaminamiento...");
         System.out.println("-------------------ESTADO DE LA TABLA-------------------");
         tabla.forEach(System.out::println);
         Paquete p = new Paquete(Tipo.RESPONSE, tabla.size());
         tabla.forEach(p::addEntrada);
-        return p.generarDatagramPacket();
+        return p;
     }
 
     public void setPuerto(int puerto) {
@@ -151,14 +147,7 @@ class TimerEx {
                 ign.get(r.nextInt(5) + 30, TimeUnit.SECONDS);
             } catch (TimeoutException | InterruptedException | ExecutionException ignored) {
             }
-
-
-
-            try {
-                socket.send(mensajeOrdinario());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                enviar(mensajeOrdinario());
 
         }
     }
@@ -193,9 +182,10 @@ class TimerEx {
             String linea;
             while ((linea = r.readLine()) != null) {
                 if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}$")) {
+                    System.err.println("Añadiendo" +linea);
                     routers.add(InetAddress.getByName(linea)); //Corresponde a un router cercano
                 }
-                if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}/[0-9]{1,2}$")) {
+                else if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}/[0-9]{1,2}$")) {
                     String[] s = linea.split("/");
                     tabla.add(new Entrada(s[0], s[1], 1)); //TODO metrica = 1 para ruta conectada¿?
 
@@ -204,6 +194,22 @@ class TimerEx {
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        for (InetAddress p : routers)
+        System.out.println(p.getHostAddress());
+    }
+
+    public static void enviar(Paquete p){
+        for (InetAddress ipDestino:routers){
+
+            try {
+                System.out.println(ipDestino);
+                socket.send(p.generarDatagramPacket(ipDestino, 520)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
