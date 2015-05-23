@@ -2,11 +2,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.concurrent.LinkedBlockingQueue;
 
 enum Tipo {
@@ -20,7 +18,6 @@ enum Tipo {
 
 class RipServer {
 
-    private static int MENSAJEORDINARIO = 30;
     private InetAddress IP;
 
     static volatile MulticastSocket socket;
@@ -70,31 +67,24 @@ class RipServer {
 
     public void readConfig() {
 
+        Enumeration<InetAddress> IPs = null;
 
-        /*Se buscan archivos con el formato ripconf-A.B.C.D.txt
-        Se rechazarán aquellos que no tengan 4 bloques de números (IP)
-        TODO ¿Rechazar aquellos que no tengan de 1 a 4 números por bloque?
-        */
-
-        File dir = new File("./");
-        File[] foundFiles = dir.listFiles((directorio, nombre) -> {
-            return nombre.matches("ripconf-([0-9]+\\.){4}txt");
-        });
-        //Si no se encuentra ningún archivo, salir
-        if (foundFiles.length == 0) {
-            System.err.println("No hay archivo de configuracion");
-            System.err.println("Saliendo...");
-            return;
-        }
-        System.out.println("Cargando archivo de configuración: " + foundFiles[0].getName());
         try {
-            IP = InetAddress.getByName(foundFiles[0].getName().split("-|.txt")[1]);
-        } catch (UnknownHostException e) {
+            IPs = NetworkInterface.getByName("wlp2s0").getInetAddresses();
+        } catch (SocketException e) {
             e.printStackTrace();
         }
+        assert IPs != null;
+        IP = IPs.nextElement();
+        while(!(IP instanceof Inet4Address))
+            IP=IPs.nextElement();
 
+        System.out.println(IP);
+        System.out.println("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
+
+        File conf = new File("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
         //Abrimos el archivo
-        try (BufferedReader r = new BufferedReader(new FileReader(foundFiles[0]))) {
+        try (BufferedReader r = new BufferedReader(new FileReader(conf))) {
             String linea;
             while ((linea = r.readLine()) != null) {
                 if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}$")) {

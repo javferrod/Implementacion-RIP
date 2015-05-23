@@ -71,32 +71,32 @@ public class Receiver implements Runnable {
                 int metrica = e.metrica;
                 /*--Comprobación de  entrada--*/
                 //Comprobar IPv4 válida
-                if (metrica < 1 || metrica > 16) continue;
+                if (metrica < 0 || metrica > 16) continue;
                 /*--FIN de comprobacion--*/
                 metrica += 1;
                 if (metrica > 16) metrica = 16;
 
-                Entry eVieja = entryTable.get(e);
+                Entry old = entryTable.get(e);
 
 
 
 
-                if (eVieja==null) { //No existía la ruta
+                if (old==null) { //No existía la ruta
                     System.err.println("NO existe");
                     e.metrica = (byte) metrica;
                     e.nextHoop = paqueteRecibido.getAddress().getAddress();
                     entryTable.add(e);
                 } else { //Existe la ruta
                     System.err.println("existe");
-                    if (Arrays.equals(paqueteRecibido.getAddress().getAddress(), eVieja.nextHoop)) { //Viene del mismo router, por lo tanto es la misma ruta
-                        if (metrica != eVieja.metrica) e.metrica = (byte) metrica;
+                    if (Arrays.equals(paqueteRecibido.getAddress().getAddress(), old.nextHoop)) { //Viene del mismo router, por lo tanto es la misma ruta
+                        if (metrica != old.metrica) e.metrica = (byte) metrica;
                     }
                     else {
-                        if (metrica < eVieja.metrica) {
+                        if (metrica < old.metrica) {
                             e.metrica = (byte) metrica;
                             e.nextHoop = paqueteRecibido.getAddress().getAddress();
                         }
-                        if (metrica == eVieja.metrica) {
+                        if (metrica == old.metrica) {
                             entryTable.setwithHeuristic(e);
                             continue;
                         }
