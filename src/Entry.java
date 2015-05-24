@@ -44,6 +44,7 @@ public class Entry {
     }
     public void resetTimer(){
         timer = System.nanoTime();
+        garbage = false;
     }
     public byte[] getMask(){
         return mask.getAddress();

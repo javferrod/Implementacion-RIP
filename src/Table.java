@@ -36,9 +36,9 @@ public class Table extends ArrayList<Entry>{
 
                         if (!e.garbage & (elapsed > TIMEOUT | e.getMetric() == (byte) 16)) { //Marcando como basura cuando se cumple el tiempo
                             System.out.println("Marcando como basura: " + e);
-                            e.garbage = true;
                             e.setMetric(16);
                             e.resetTimer();
+                            e.garbage = true;
                             table.set(e);
                             continue;
                         }
