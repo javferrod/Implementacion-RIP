@@ -1,8 +1,10 @@
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-public class Table extends ArrayList<Entry> implements Runnable{
+public class Table extends ArrayList<Entry>{
 
     LinkedBlockingQueue<Entry> TriggeredPackets;
 
@@ -16,20 +18,45 @@ public class Table extends ArrayList<Entry> implements Runnable{
     Table(LinkedBlockingQueue<Entry> TriggeredPackets){
         super();
         this.TriggeredPackets = TriggeredPackets;
-        this.run();
+        Table table = this;
+        new Timer(true).schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("Comprobando tabla en busca de rutas expiradas");
+                synchronized (table){
+                    for (int i = 0; i < table.size(); i++) {
+                        Entry e = table.get(i);
+
+                        double elapsed1 =(System.nanoTime() - e.timer)/1000000000L;
+                        double elapsed = System.nanoTime()-e.timer;
+                        System.err.println(elapsed1);
+
+                        if (e.isDirectConnected())
+                            continue;
+
+                        if (!e.garbage & (elapsed > TIMEOUT | e.getMetric() == (byte) 16)) { //Marcando como basura cuando se cumple el tiempo
+                            System.out.println("Marcando como basura: " + e);
+                            e.garbage = true;
+                            e.setMetric(16);
+                            e.resetTimer();
+                            table.set(e);
+                            continue;
+                        }
+                        if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
+                            System.out.println("Eliminando: " + e);
+                            table.remove(e);
+                        }
+                    }
+                }
+
+            }
+        }, 150*1000, 15*1000);
     }
 
     @Override
     public void forEach(Consumer<? super Entry> action) {
         synchronized (this) {
             super.forEach(action);
-        }
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        synchronized (this){
-            return super.remove(o);
         }
     }
 
@@ -69,43 +96,4 @@ public class Table extends ArrayList<Entry> implements Runnable{
             }
         }
     }
-
-    @Override
-    public void run() {
-        try {
-            Thread.sleep(150*1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        while (true) {
-            System.out.println("Comprobando tabla en busca de rutas expiradas");
-            try {
-                Thread.sleep(10*1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            for (Entry e : this) {
-                if (e.isDirectConnected()) continue;
-
-                double elapsed1 = (System.nanoTime() - e.timer) / 1000000000L;
-                double elapsed = System.nanoTime() - e.timer;
-                System.err.println(elapsed1);
-
-
-                if (!e.garbage & (elapsed > TIMEOUT | e.getMetric() == (byte) 16)) { //Marcando como basura cuando se cumple el tiempo
-                    System.out.println("Marcando como basura: " + e);
-                    e.garbage = true;
-                    e.setMetric(16);
-                    e.resetTimer();
-                    this.set(e);
-                    continue;
-                }
-                if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
-                    System.out.println("Eliminando: " + e);
-                    this.remove(e);
-                }
-            }
-        }
-    }
-
 }
