@@ -105,7 +105,7 @@ class RipServer {
 
         IPstring = IP.toString().substring(1,IP.toString().length());
         System.out.println("ripconf-" + IPstring + ".txt");
-        //entryTable.add(new Entry(IPstring,"32",0));
+        entryTable.add(new Entry(IPstring,"32",0));
 
         File conf = new File("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
         //Abrimos el archivo
