@@ -8,8 +8,6 @@ public class Rip {
         RIP.readConfig();
         RIP.setPort(520);
         RIP.start();
-
-
     }
 
 

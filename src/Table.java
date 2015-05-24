@@ -32,10 +32,10 @@ public class Table extends ArrayList<Entry>{
                         System.err.println(elapsed1);
 
 
-                        if (!e.garbage & (elapsed > TIMEOUT) | e.metrica == (byte) 16) { //Marcando como basura cuando se cumple el tiempo
+                        if (!e.garbage & (elapsed > TIMEOUT) | e.getMetric() == (byte) 16) { //Marcando como basura cuando se cumple el tiempo
                             System.out.println("Marcando como basura: " + e);
                             e.garbage = true;
-                            e.metrica = (byte) 16;
+                            e.setMetric(16);
                             e.resetTimer();
                             table.set(e);
                             continue;

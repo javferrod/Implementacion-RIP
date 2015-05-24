@@ -1,69 +1,83 @@
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 
 public class Entry {
-    byte[] IPv4 = new byte[4];
-    byte[] mascara = new byte[4];
-    byte[] nextHoop = new byte[4];
-    byte metrica;
+    private InetAddress IPv4;
+    private InetAddress mascara;
+    private InetAddress nextHop;
+    private int metric;
     long timer;
     boolean garbage;
 
 
-    Entry(byte[] IPv4, byte[] mascara, byte metrica){
-        this.IPv4=IPv4;
-        this.mascara=mascara;
-        this.metrica=metrica;
+    Entry(byte[] IPv4, byte[] mascara, byte metric){
+        try {
+            this.IPv4=InetAddress.getByAddress(IPv4);
+            this.mascara=InetAddress.getByAddress(mascara);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        this.metric =metric;
     }
-
-    public void resetTimer(){
-        timer = System.nanoTime();
-    }
-    public boolean isDirectConnected(){
-        return Arrays.equals(nextHoop,new byte[4]); //TODO ¿isEmpty?
-    }
-
     Entry(String IPv4, String mask, int metric){
 
         try {
-            this.IPv4=InetAddress.getByName(IPv4).getAddress();
+            this.IPv4=InetAddress.getByName(IPv4);
         } catch (UnknownHostException e) {
             System.err.println("IP no cumple el formato IPv4: "+ IPv4);
         }
 
         int mascara1 = 0xffffffff << (32 - Integer.valueOf(mask));
-
         byte[] mascaraBytes = new byte[]{
                 (byte)(mascara1 >>> 24), (byte)(mascara1 >> 16 & 0xff), (byte)(mascara1 >> 8 & 0xff), (byte)(mascara1 & 0xff) };
 
-        InetAddress MaksAddress = null;
         try {
-            MaksAddress = InetAddress.getByAddress(mascaraBytes);
+            mascara = InetAddress.getByAddress(mascaraBytes);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
 
 
-        assert MaksAddress != null;
-        this.mascara = MaksAddress.getAddress();
 
-        this.metrica = (byte) metric;
+        this.metric = metric;
+    }
+    public void resetTimer(){
+        timer = System.nanoTime();
+    }
+    public byte[] getMask(){
+        return mascara.getAddress();
+    }
+    public byte[] getIPv4(){
+        return IPv4.getAddress();
+    }
+    public byte[] getNextHopBytes(){
+        return nextHop.getAddress();
+    }
+    public InetAddress getNextHop(){
+        return nextHop;
+    }
+
+    public byte getMetric(){
+        return (byte) metric;
+    }
+    public void setMetric(int metric){
+        this.metric = metric;
+    }
+    public void setNextHop(InetAddress nextHop){
+        this.nextHop = nextHop;
+    }
+
+    public boolean isDirectConnected(){
+
+        try {
+            return nextHop.equals(InetAddress.getByName("0.0.0.0"));
+        } catch (UnknownHostException e) {
+            return false;
+        }
     }
     @Override
     public String toString() {
-        InetAddress IP = null;
-        InetAddress mask = null;
-        InetAddress nextH = null;
-        try {
-            IP = InetAddress.getByAddress(this.IPv4);
-            mask = InetAddress.getByAddress(this.mascara);
-            if(this.nextHoop!=null)
-            nextH = InetAddress.getByAddress(this.nextHoop);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        return "IP: "+IP+" Máscara: "+mask + " NextHoop: " + nextH+" Métrica: "+this.metrica;
+        return "IP: "+IPv4+" Máscara: "+mascara + " NextHop: " + nextHop +" Métrica: "+ metric;
 
     }
 
@@ -73,11 +87,11 @@ public class Entry {
         if(!(o instanceof Entry)) return false;
 
         Entry e = (Entry) o;
-        return Arrays.equals(this.IPv4, e.IPv4) & Arrays.equals(this.mascara, e.mascara); //TODO ¿Como compararlo?
+        return this.IPv4.equals(e.IPv4) & this.mascara.equals(e.mascara); //TODO ¿Como compararlo?
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(IPv4) + Arrays.hashCode(mascara);
+        return IPv4.hashCode() + mascara.hashCode();
     }
 }

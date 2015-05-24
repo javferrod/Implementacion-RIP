@@ -28,7 +28,6 @@ public class Sender implements Runnable {
 
     }
 
-
     private Packet updateMessage() {
         System.out.println(" [Mensaje ordinario] Enviando tabla de encaminamiento...");
         System.out.println("-------------------ESTADO DE LA TABLA-------------------");

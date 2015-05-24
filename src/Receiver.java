@@ -1,7 +1,5 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public class Receiver implements Runnable {
     
@@ -24,8 +22,19 @@ public class Receiver implements Runnable {
         }
     }
 
-    public void procesarPaquete(DatagramPacket paqueteRecibido) {
-        byte[] p = paqueteRecibido.getData();
+    public void procesarPaquete(DatagramPacket receivedPacket) {
+
+        if(receivedPacket.getPort()!=520) return;
+        if(RipServer.isNeighbor(receivedPacket.getAddress())) return;
+
+        byte[] p = receivedPacket.getData();
+
+        if(!(p[0]==Tipo.REQUEST.v|p[0]==Tipo.RESPONSE.v)) return;
+        if(p[1]!=(byte)2) return;
+
+
+
+
 
         if (p[0] == Tipo.REQUEST.v) {
             //TODO ¿Correcta la comprobación de length?
@@ -33,7 +42,7 @@ public class Receiver implements Runnable {
                 Packet enviar = new Packet(Tipo.RESPONSE, entryTable.size());
                 entryTable.forEach(enviar::addEntry);
                 try {
-                    RipServer.socket.send(enviar.getDatagramPacket(paqueteRecibido.getAddress(), paqueteRecibido.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+                    RipServer.socket.send(enviar.getDatagramPacket(receivedPacket.getAddress(), receivedPacket.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -44,7 +53,7 @@ public class Receiver implements Runnable {
                 for (Entry e : pReceivec.getEntrys()) {
                     Entry ourEntry = entryTable.get(e);
                     if(entryTable.get(e)!=null){ //Si la tenemos
-                        pReceivec.setMetric(entryIndex, ourEntry.metrica);
+                        pReceivec.setMetric(entryIndex, ourEntry.getMetric());
                         hayEntradas = true;
                     }else{ //Si no la tenemos
                         pReceivec.setMetric(entryIndex, (byte) 16);
@@ -68,7 +77,10 @@ public class Receiver implements Runnable {
              */
             for (Entry newEntry : recibido.getEntrys()) {
                 System.out.println("INFO: Procesando entrada del paquete recibido: " + newEntry);
-                int metrica = newEntry.metrica;
+                int metrica = newEntry.getMetric();
+
+
+
                 /*--Comprobación de  entrada--*/
                 //Comprobar IPv4 válida
                 if (metrica < 0 || metrica > 16) continue;
@@ -79,34 +91,28 @@ public class Receiver implements Runnable {
 
                 if (old==null) { //No existía la ruta
                     System.err.println("NO existe");
-                    newEntry.metrica = (byte) metrica;
-                    newEntry.nextHoop = paqueteRecibido.getAddress().getAddress();
+                    newEntry.setMetric(metrica);
+                    newEntry.setNextHop(receivedPacket.getAddress());
                     entryTable.add(newEntry);
                 } else { //Existe la ruta
                     System.err.println("existe");
-                    InetAddress nextHoopa = null;
-                    try {
-                        nextHoopa = InetAddress.getByAddress(old.nextHoop);
-                    } catch (UnknownHostException e1) {
-                        e1.printStackTrace();
-                    }
-                    if (paqueteRecibido.getAddress().equals(nextHoopa)) { //Viene del mismo router, por lo tanto es la misma ruta
-                        if(old.metrica == (byte) metrica){
+                    if (receivedPacket.getAddress().equals(old.getNextHop())) { //Viene del mismo router, por lo tanto es la misma ruta
+                        if(old.getMetric() == (byte) metrica){
                             entryTable.refresh(old); //Solo reiniciamos el timeOut
                             continue;
                         }
-                        old.metrica = (byte) metrica;
+                        old.setMetric(metrica);
                         entryTable.set(old);
 
 
                     }
                     else {
-                        if (metrica < old.metrica) {
-                            newEntry.metrica = (byte) metrica;
-                            newEntry.nextHoop = paqueteRecibido.getAddress().getAddress();
+                        if (metrica < old.getMetric()) {
+                            newEntry.setMetric(metrica);
+                            newEntry.setNextHop(receivedPacket.getAddress());
                             entryTable.set(newEntry); //Añadimos la entrada actualizada
                         }
-                        if (metrica == old.metrica) {
+                        if (metrica == old.getMetric()) {
                             entryTable.setwithHeuristic(newEntry);
                         }
                     }

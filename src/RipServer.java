@@ -27,8 +27,6 @@ class RipServer {
     Table entryTable = new Table(TriggeredPackets);
 
 
-
-
     Thread receiverThread = new Thread(new Receiver(entryTable));
     Thread senderThread = new Thread(new Sender(entryTable,30,receiverThread));
     Thread triggeredUpdateThread = new Thread(new TriggeredSender(TriggeredPackets));
@@ -60,8 +58,7 @@ class RipServer {
         try {
             entryTable.add(e);
             entryTable.TriggeredPackets.put(e);
-        } catch (InterruptedException e1) {
-            System.out.println("PENE");
+        } catch (InterruptedException ignored) {
         }
 
     }
@@ -121,6 +118,13 @@ class RipServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    static boolean isNeighbor(InetAddress IP){
+        for (InetAddress address : neighbors){
+            if(address.equals(IP))
+                return true;
+        }
+        return false;
     }
 
 
