@@ -23,7 +23,7 @@ public class TriggeredSender implements Runnable {
 
         try {
             e = triggeredPackets.take();
-            triggeredPackets.add(e);
+            pendingTriggeredPackets.add(e);
             Thread.sleep(10);
         } catch (InterruptedException ignored) {
         }
