@@ -75,6 +75,13 @@ public class Table extends ArrayList<Entry>{
 
         }
     }
+    public void addTriggered(Entry e){
+        try {
+            TriggeredPackets.put(e);
+        } catch (InterruptedException e1) {
+            System.out.println("PENE");
+        }
+    }
     public void setwithHeuristic(Entry e){
         synchronized (this) {
             if((System.nanoTime()-this.get(e).timer)>TIMEOUT/2){ //Si la ruta antigua da signos de expirar, cambiamos a la nueva;

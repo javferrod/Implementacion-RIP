@@ -67,26 +67,22 @@ public class Receiver implements Runnable {
             -IPv4 que no sea la nuestra
 
              */
-            for (Entry e : recibido.getEntrys()) {
-                System.out.println("INFO: Procesando entrada del paquete recibido: " + e);
-                int metrica = e.metrica;
+            for (Entry newEntry : recibido.getEntrys()) {
+                System.out.println("INFO: Procesando entrada del paquete recibido: " + newEntry);
+                int metrica = newEntry.metrica;
                 /*--Comprobación de  entrada--*/
                 //Comprobar IPv4 válida
                 if (metrica < 0 || metrica > 16) continue;
                 /*--FIN de comprobacion--*/
                 metrica += 1;
                 if (metrica > 16) metrica = 16;
-
-                Entry old = entryTable.get(e);
-
-
-
+                Entry old = entryTable.get(newEntry);
 
                 if (old==null) { //No existía la ruta
                     System.err.println("NO existe");
-                    e.metrica = (byte) metrica;
-                    e.nextHoop = paqueteRecibido.getAddress().getAddress();
-                    entryTable.add(e);
+                    newEntry.metrica = (byte) metrica;
+                    newEntry.nextHoop = paqueteRecibido.getAddress().getAddress();
+                    entryTable.add(newEntry);
                 } else { //Existe la ruta
                     System.err.println("existe");
                     InetAddress nextHoopa = null;
@@ -96,21 +92,20 @@ public class Receiver implements Runnable {
                         e1.printStackTrace();
                     }
                     if (paqueteRecibido.getAddress().equals(nextHoopa)) { //Viene del mismo router, por lo tanto es la misma ruta
-                        e.nextHoop = paqueteRecibido.getAddress().getAddress();
-                        if (metrica != old.metrica) e.metrica = (byte) metrica;
+                        old.metrica = (byte) metrica;
+                        entryTable.set(old);
 
                     }
                     else {
                         if (metrica < old.metrica) {
-                            e.metrica = (byte) metrica;
-                            e.nextHoop = paqueteRecibido.getAddress().getAddress();
+                            newEntry.metrica = (byte) metrica;
+                            newEntry.nextHoop = paqueteRecibido.getAddress().getAddress();
+                            entryTable.set(newEntry); //Añadimos la entrada actualizada
                         }
                         if (metrica == old.metrica) {
-                            entryTable.setwithHeuristic(e);
-                            continue;
+                            entryTable.setwithHeuristic(newEntry);
                         }
                     }
-                    entryTable.set(e); //Añadimos la entrada actualizada
                 }
             }
 

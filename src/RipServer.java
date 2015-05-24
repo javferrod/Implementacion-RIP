@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -41,6 +38,32 @@ class RipServer {
         receiverThread.start();
         senderThread.start();
         triggeredUpdateThread.start();
+
+        Console console = System.console();
+        InetAddress IP = null,Mask = null;
+        String input = console.readLine("Introduce IP para Triggered inmediato:");
+        try {
+            IP = InetAddress.getByName(input);
+        } catch (UnknownHostException e) {
+            System.err.println("IP erronea");
+        }
+        input = console.readLine("Introduce Mascara:");
+        try {
+            Mask = InetAddress.getByName(input);
+        } catch (UnknownHostException e) {
+            System.err.println("Mac erronea");
+        }
+        input = console.readLine("Introduce métrica");
+        assert IP != null;
+        assert Mask != null;
+        Entry e = new Entry(IP.getAddress(),Mask.getAddress(),(byte)Integer.parseInt(input));
+        try {
+            entryTable.TriggeredPackets.put(e);
+        } catch (InterruptedException e1) {
+            System.out.println("PENE");
+        }
+
+
     }
 
     public void setPort(int puerto) {
@@ -54,11 +77,14 @@ class RipServer {
     public static void sendUnicast(Packet p){
         for (InetAddress iPDestination: neighbors){
             try {
-                socket.send(p.getDatagramPacket(iPDestination, 7000)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+                socket.send(p.getDatagramPacket(iPDestination, 520)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
+
+
     }
 
     public void readConfig() {

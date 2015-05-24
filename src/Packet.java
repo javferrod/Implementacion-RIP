@@ -83,7 +83,7 @@ public class Packet {
             System.out.println(nextHoopa);
             assert nextHoopa != null;
             if(nextHoopa.equals(addrDestino))
-                tContent.put(20+20*j,(byte)16);
+                tContent.put(23+20*j,(byte)16);
         }
         return new DatagramPacket(tContent.array(),tContent.limit(), addrDestino, puertoDestino);
     }

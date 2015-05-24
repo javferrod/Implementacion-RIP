@@ -9,8 +9,6 @@ public class TriggeredSender implements Runnable {
     private LinkedList<Entry> pendingTriggeredPackets = new LinkedList<>();
 
 
-    private long timer;
-
     TriggeredSender(LinkedBlockingQueue<Entry> link){
         this.triggeredPackets =link;
     }
@@ -18,11 +16,11 @@ public class TriggeredSender implements Runnable {
     @Override
     public void run() {
         Entry e = null;
-        timer = System.nanoTime();
+        long timer = System.nanoTime();
 
         while(true) {
             try {
-                e = triggeredPackets.take();
+                pendingTriggeredPackets.add(triggeredPackets.take());
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }
@@ -36,7 +34,6 @@ public class TriggeredSender implements Runnable {
                 timer = System.nanoTime();
             } else {
                 System.out.println("[Triggered Update] Waiting for timeout");
-                pendingTriggeredPackets.add(e);
                 triggeredPackets.drainTo(pendingTriggeredPackets);
                 synchronized (this) {
                     try {
@@ -67,7 +64,7 @@ public class TriggeredSender implements Runnable {
         for (int i = 0; i < pendingSize ; i++) {
             p.addEntry(pendingTriggeredPackets.pop());
         }
-        for (int i = 0; i < blockingSize; i++) {
+        for (int j = 0; j < blockingSize; j++) {
             p.addEntry(triggeredPackets.poll());
         }
 
