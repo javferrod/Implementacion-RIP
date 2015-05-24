@@ -19,7 +19,7 @@ public class Sender implements Runnable {
         while(true) {
             try {
                 Random r = new Random();
-                Thread.sleep(timeOut * 1000 + r.nextInt(5) * 1000);
+                Thread.sleep(timeOut * 1000 + (r.nextInt(10) -5)* 1000);
             } catch (InterruptedException ignored) {
             }
             receiverThread.interrupt();
