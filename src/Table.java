@@ -23,16 +23,15 @@ public class Table extends ArrayList<Entry>{
             public void run() {
                 System.out.println("Comprobando tabla en busca de rutas expiradas");
                 synchronized (table){
-                    for (int i = 0; i < table.size(); i++) { //TODO cambiar este loop para que sea Entry e: table
+                    for (Entry e : table) {
                         double nano = System.nanoTime();
-                        Entry e = table.get(i);
                         double elapsed1 =(nano - e.timer)/1000000000L;
                         double elapsed = nano-e.timer;
                         System.err.println(elapsed1);
                         //double nano = System.nanoTime();
 
                         if (e.isDirectConnected())
-                            continue; //TODO ¿las rutas conectadas se eliminan? En este caso NO
+                            continue;
 
                         if (!e.garbage & (elapsed > TIMEOUT) | e.metrica==(byte)16) { //Marcando como basura cuando se cumple el tiempo
                             System.out.println("Marcando como basura: "+e);
