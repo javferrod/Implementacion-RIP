@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
 
 public class Table extends ArrayList<Entry>{
 
@@ -22,31 +23,39 @@ public class Table extends ArrayList<Entry>{
             @Override
             public void run() {
                 System.out.println("Comprobando tabla en busca de rutas expiradas");
-                synchronized (table){
+                synchronized (table) {
                     for (Entry e : table) {
-                        if(e.isDirectConnected()) continue;
+                        if (e.isDirectConnected()) continue;
 
-                        double elapsed1 =(System.nanoTime() - e.timer)/1000000000L;
-                        double elapsed = System.nanoTime() -e.timer;
+                        double elapsed1 = (System.nanoTime() - e.timer) / 1000000000L;
+                        double elapsed = System.nanoTime() - e.timer;
                         System.err.println(elapsed1);
 
 
-                        if (!e.garbage & (elapsed > TIMEOUT) | e.metrica==(byte)16) { //Marcando como basura cuando se cumple el tiempo
-                            System.out.println("Marcando como basura: "+e);
+                        if (!e.garbage & (elapsed > TIMEOUT) | e.metrica == (byte) 16) { //Marcando como basura cuando se cumple el tiempo
+                            System.out.println("Marcando como basura: " + e);
                             e.garbage = true;
                             e.metrica = (byte) 16;
                             e.resetTimer();
                             table.set(e);
+                            continue;
                         }
-                        if(e.garbage & elapsed > GARBAGETIMEOUT){ //Eliminamos la basura
-                            System.out.println("Eliminando: "+e);
+                        if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
+                            System.out.println("Eliminando: " + e);
                             table.remove(e);
                         }
                     }
                 }
 
             }
-        }, 150*1000, 15*1000);
+        }, 150 * 1000, 15 * 1000);
+    }
+
+    @Override
+    public void forEach(Consumer<? super Entry> action) {
+        synchronized (this) {
+            super.forEach(action);
+        }
     }
 
     public Entry get(Entry e){
