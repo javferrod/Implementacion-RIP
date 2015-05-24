@@ -51,9 +51,15 @@ public class Entry {
         return IPv4.getAddress();
     }
     public byte[] getNextHopBytes(){
-        return nextHop.getAddress();
+        return getNextHop().getAddress();
     }
     public InetAddress getNextHop(){
+        if(this.nextHop==null)
+            try {
+                return InetAddress.getByName("0.0.0.0");
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
         return nextHop;
     }
 
