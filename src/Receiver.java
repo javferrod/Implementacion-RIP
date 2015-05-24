@@ -38,21 +38,21 @@ public class Receiver implements Runnable {
                     e.printStackTrace();
                 }
             } else { //Es un request para algunas entradas
-                Packet recibido = new Packet(p);
-                int indexEntrada = 0;
+                Packet pReceivec = new Packet(p);
+                int entryIndex = 0;
                 boolean hayEntradas = false;
-                for (Entry e : recibido.getEntrys()) {
-                    Entry eGuardada = entryTable.get(e);
+                for (Entry e : pReceivec.getEntrys()) {
+                    Entry ourEntry = entryTable.get(e);
                     if(entryTable.get(e)!=null){ //Si la tenemos
-                        recibido.setMetric(indexEntrada, eGuardada.metrica);
+                        pReceivec.setMetric(entryIndex, ourEntry.metrica);
                         hayEntradas = true;
                     }else{ //Si no la tenemos
-                        recibido.setMetric(indexEntrada, (byte) 16);
+                        pReceivec.setMetric(entryIndex, (byte) 16);
                     }
-                    indexEntrada++;
+                    entryIndex++;
                 }
                 //Enviamos el paquete de vuelta
-                if (hayEntradas) recibido.setCommand(Tipo.RESPONSE);
+                if (hayEntradas) pReceivec.setCommand(Tipo.RESPONSE);
                 //TODO enviar solo al que respondió
             }
 
