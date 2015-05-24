@@ -90,6 +90,7 @@ public class Receiver implements Runnable {
                 Entry old = entryTable.get(newEntry);
 
                 if (old==null) { //No existía la ruta
+                    if(metrica==16) continue;
                     System.err.println("NO existe");
                     newEntry.setMetric(metrica);
                     newEntry.setNextHop(receivedPacket.getAddress());
@@ -98,6 +99,7 @@ public class Receiver implements Runnable {
                     System.err.println("existe");
                     if (receivedPacket.getAddress().equals(old.getNextHop())) { //Viene del mismo router, por lo tanto es la misma ruta
                         if(old.getMetric() == (byte) metrica){
+                            if(metrica==16) continue;
                             entryTable.refresh(old); //Solo reiniciamos el timeOut
                             continue;
                         }

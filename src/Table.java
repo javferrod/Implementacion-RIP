@@ -83,9 +83,7 @@ public class Table extends ArrayList<Entry>{
             this.set(index, e);
             try {
                 TriggeredPackets.put(e);
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
-            }
+            } catch (InterruptedException ignored) {}
 
         }
     }

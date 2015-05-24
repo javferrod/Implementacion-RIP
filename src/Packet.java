@@ -13,6 +13,10 @@ public class Packet {
         content.put(1, (byte) 2);                        //Version de RIP
         content.put(2, (byte) 0);                        //Relleno
         content.put(3, (byte) 0);                        //Relleno
+        /*----AUTH------*/
+
+
+
     }
     Packet(byte[] mensaje){
         if((mensaje.length-4)%20!=0) return; //TODO como transmitirselo a la clase que llama? !=null?

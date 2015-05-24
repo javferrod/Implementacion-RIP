@@ -15,7 +15,6 @@ enum Tipo {
 
 class RipServer {
 
-    private InetAddress IP;
 
     static volatile DatagramSocket socket;
 
@@ -88,6 +87,8 @@ class RipServer {
     public void readConfig() {
 
         Enumeration<InetAddress> IPs = null;
+        String IPstring;
+        InetAddress IP;
 
         try {
             IPs = NetworkInterface.getByName("wlp2s0").getInetAddresses();
@@ -99,7 +100,9 @@ class RipServer {
         while(!(IP instanceof Inet4Address))
             IP=IPs.nextElement();
 
-        System.out.println("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
+        IPstring = IP.toString().substring(1,IP.toString().length());
+        System.out.println("ripconf-"+IPstring+".txt");
+        entryTable.add(new Entry(IPstring,"255.255.255.0",0));
 
         File conf = new File("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
         //Abrimos el archivo
