@@ -1,10 +1,8 @@
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-public class Table extends ArrayList<Entry>{
+public class Table extends ArrayList<Entry> implements Runnable{
 
     LinkedBlockingQueue<Entry> TriggeredPackets;
 
@@ -18,37 +16,7 @@ public class Table extends ArrayList<Entry>{
     Table(LinkedBlockingQueue<Entry> TriggeredPackets){
         super();
         this.TriggeredPackets = TriggeredPackets;
-        Table table = this;
-        new Timer(true).schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println("Comprobando tabla en busca de rutas expiradas");
-                synchronized (table) {
-                    for (Entry e : table) {
-                        if (e.isDirectConnected()) continue;
-
-                        double elapsed1 = (System.nanoTime() - e.timer) / 1000000000L;
-                        double elapsed = System.nanoTime() - e.timer;
-                        System.err.println(elapsed1);
-
-
-                        if (!e.garbage & (elapsed > TIMEOUT | e.getMetric() == (byte) 16)) { //Marcando como basura cuando se cumple el tiempo
-                            System.out.println("Marcando como basura: " + e);
-                            e.garbage = true;
-                            e.setMetric(16);
-                            e.resetTimer();
-                            table.set(e);
-                            continue;
-                        }
-                        if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
-                            System.out.println("Eliminando: " + e);
-                            table.remove(e);
-                        }
-                    }
-                }
-
-            }
-        }, 150 * 1000, 15 * 1000);
+        this.run();
     }
 
     @Override
@@ -101,4 +69,43 @@ public class Table extends ArrayList<Entry>{
             }
         }
     }
+
+    @Override
+    public void run() {
+        try {
+            Thread.sleep(150*1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        while (true) {
+            System.out.println("Comprobando tabla en busca de rutas expiradas");
+            try {
+                Thread.sleep(10*1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            for (Entry e : this) {
+                if (e.isDirectConnected()) continue;
+
+                double elapsed1 = (System.nanoTime() - e.timer) / 1000000000L;
+                double elapsed = System.nanoTime() - e.timer;
+                System.err.println(elapsed1);
+
+
+                if (!e.garbage & (elapsed > TIMEOUT | e.getMetric() == (byte) 16)) { //Marcando como basura cuando se cumple el tiempo
+                    System.out.println("Marcando como basura: " + e);
+                    e.garbage = true;
+                    e.setMetric(16);
+                    e.resetTimer();
+                    this.set(e);
+                    continue;
+                }
+                if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
+                    System.out.println("Eliminando: " + e);
+                    this.remove(e);
+                }
+            }
+        }
+    }
+
 }
