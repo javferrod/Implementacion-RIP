@@ -40,6 +40,9 @@ public class Table extends ArrayList<Entry>{
                             e.resetTimer();
                             e.garbage = true;
                             table.set(i,e);
+                            try {
+                                TriggeredPackets.put(e);
+                            } catch (InterruptedException ignored) {}
                             continue;
                         }
                         if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
