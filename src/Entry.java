@@ -3,7 +3,7 @@ import java.net.UnknownHostException;
 
 public class Entry {
     private InetAddress IPv4;
-    private InetAddress mascara;
+    private InetAddress mask;
     private InetAddress nextHop;
     private int metric;
     long timer;
@@ -13,7 +13,7 @@ public class Entry {
     Entry(byte[] IPv4, byte[] mascara, byte metric){
         try {
             this.IPv4=InetAddress.getByAddress(IPv4);
-            this.mascara=InetAddress.getByAddress(mascara);
+            this.mask =InetAddress.getByAddress(mascara);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -32,7 +32,7 @@ public class Entry {
                 (byte)(mascara1 >>> 24), (byte)(mascara1 >> 16 & 0xff), (byte)(mascara1 >> 8 & 0xff), (byte)(mascara1 & 0xff) };
 
         try {
-            mascara = InetAddress.getByAddress(mascaraBytes);
+            this.mask = InetAddress.getByAddress(mascaraBytes);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -45,7 +45,7 @@ public class Entry {
         timer = System.nanoTime();
     }
     public byte[] getMask(){
-        return mascara.getAddress();
+        return mask.getAddress();
     }
     public byte[] getIPv4(){
         return IPv4.getAddress();
@@ -74,16 +74,12 @@ public class Entry {
     }
 
     public boolean isDirectConnected(){
+            return nextHop==null;
 
-        try {
-            return nextHop.equals(InetAddress.getByName("0.0.0.0"));
-        } catch (UnknownHostException e) {
-            return false;
-        }
     }
     @Override
     public String toString() {
-        return "IP: "+IPv4+" Máscara: "+mascara + " NextHop: " + nextHop +" Métrica: "+ metric;
+        return "IP: "+IPv4+" Máscara: "+ mask + " NextHop: " + getNextHop() +" Métrica: "+ metric;
 
     }
 
@@ -93,11 +89,11 @@ public class Entry {
         if(!(o instanceof Entry)) return false;
 
         Entry e = (Entry) o;
-        return this.IPv4.equals(e.IPv4) & this.mascara.equals(e.mascara); //TODO ¿Como compararlo?
+        return this.IPv4.equals(e.IPv4) & this.mask.equals(e.mask); //TODO ¿Como compararlo?
     }
 
     @Override
     public int hashCode() {
-        return IPv4.hashCode() + mascara.hashCode();
+        return IPv4.hashCode() + mask.hashCode();
     }
 }
