@@ -22,7 +22,6 @@ public class Sender implements Runnable {
                 Thread.sleep(timeOut * 1000 + (r.nextInt(10) -5)* 1000);
             } catch (InterruptedException ignored) {
             }
-            receiverThread.interrupt();
             RipServer.sendUnicast(updateMessage());
         }
 

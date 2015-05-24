@@ -17,13 +17,13 @@ public class TriggeredSender implements Runnable {
     public void run() {
         long timer = System.nanoTime();
         long timeToWait;
-        Packet send;
         Random r = new Random();
         long elapsed;
         Entry e;
 
         try {
             e = triggeredPackets.take();
+            triggeredPackets.add(e);
             Thread.sleep(10);
         } catch (InterruptedException ignored) {
         }
@@ -37,13 +37,13 @@ public class TriggeredSender implements Runnable {
             } catch (InterruptedException ignored) {
             }
         }
-
+        System.out.println("TRIGGERED UPDATE");
         triggeredPackets.drainTo(pendingTriggeredPackets);
-
+        RipServer.sendUnicast(getTriggeredPacket());
 
     }
 
-    private Packet getTriggeredPacket(Entry e) throws InterruptedException {
+    private Packet getTriggeredPacket() {
         Packet p = new Packet(Tipo.RESPONSE,pendingTriggeredPackets.size());
         pendingTriggeredPackets.forEach(p::addEntry);
         return p;

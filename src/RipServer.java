@@ -23,11 +23,11 @@ class RipServer {
     static ArrayList<InetAddress> neighbors = new ArrayList<>();
 
 
-    LinkedBlockingQueue<Entry> TriggeredPackets = new LinkedBlockingQueue<>();
-    Table entryTable = new Table(TriggeredPackets);
+    static LinkedBlockingQueue<Entry> TriggeredPackets = new LinkedBlockingQueue<>();
+    static volatile Table entryTable = new Table(TriggeredPackets);
 
 
-    Thread receiverThread = new Thread(new Receiver(entryTable));
+    static Thread receiverThread = new Thread(new Receiver(entryTable));
     Thread senderThread = new Thread(new Sender(entryTable,30,receiverThread));
     Thread triggeredUpdateThread = new Thread(new TriggeredSender(TriggeredPackets));
 
@@ -72,6 +72,7 @@ class RipServer {
     }
 
     public static void sendUnicast(Packet p){
+        receiverThread.interrupt();
         for (InetAddress iPDestination: neighbors){
             try {
                 socket.send(p.getDatagramPacket(iPDestination, 520)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
