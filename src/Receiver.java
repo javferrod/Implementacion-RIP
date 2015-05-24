@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.util.Arrays;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class Receiver implements Runnable {
     
@@ -88,8 +89,16 @@ public class Receiver implements Runnable {
                     entryTable.add(e);
                 } else { //Existe la ruta
                     System.err.println("existe");
-                    if (Arrays.equals(paqueteRecibido.getAddress().getAddress(), old.nextHoop)) { //Viene del mismo router, por lo tanto es la misma ruta
+                    InetAddress nextHoopa = null;
+                    try {
+                        nextHoopa = InetAddress.getByAddress(old.nextHoop);
+                    } catch (UnknownHostException e1) {
+                        e1.printStackTrace();
+                    }
+                    if (paqueteRecibido.getAddress().equals(nextHoopa)) { //Viene del mismo router, por lo tanto es la misma ruta
+                        e.nextHoop = paqueteRecibido.getAddress().getAddress();
                         if (metrica != old.metrica) e.metrica = (byte) metrica;
+
                     }
                     else {
                         if (metrica < old.metrica) {

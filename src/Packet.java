@@ -1,8 +1,8 @@
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Packet {
     private ByteBuffer content;
@@ -72,9 +72,17 @@ public class Packet {
         ByteBuffer tContent = content;
         byte [] nextHoop;
         for (int j = 0; j < index; j++) {
-            nextHoop= new byte[]{content.get(16 + j * 20), content.get(17 + j * 20),
-                    tContent.get(18 + j * 20), content.get(19 + j * 20)};
-            if(Arrays.equals(nextHoop, addrDestino.getAddress()))
+            nextHoop= new byte[]{tContent.get(16 + j * 20) , tContent.get(17 + j * 20),
+                    tContent.get(18 + j * 20), tContent.get(19 + j * 20)};
+            InetAddress nextHoopa = null;
+            try {
+                 nextHoopa = InetAddress.getByAddress(nextHoop);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+            System.out.println(nextHoopa);
+            assert nextHoopa != null;
+            if(nextHoopa.equals(addrDestino))
                 tContent.put(20+20*j,(byte)16);
         }
         return new DatagramPacket(tContent.array(),tContent.limit(), addrDestino, puertoDestino);

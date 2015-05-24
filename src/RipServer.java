@@ -20,7 +20,7 @@ class RipServer {
 
     private InetAddress IP;
 
-    static volatile MulticastSocket socket;
+    static volatile DatagramSocket socket;
 
 
     static ArrayList<InetAddress> neighbors = new ArrayList<>();
@@ -45,20 +45,16 @@ class RipServer {
 
     public void setPort(int puerto) {
         try {
-            socket = new MulticastSocket(puerto);
-            socket.joinGroup(InetAddress.getByName("224.0.0.9"));
-            socket.setLoopbackMode(true);
+            socket = new DatagramSocket(puerto);
         } catch (SocketException e) {
             System.err.println("No se pudo acceder al puerto " + puerto);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     public static void sendUnicast(Packet p){
         for (InetAddress iPDestination: neighbors){
             try {
-                socket.send(p.getDatagramPacket(iPDestination, 520)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+                socket.send(p.getDatagramPacket(iPDestination, 7000)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
             } catch (IOException e) {
                 e.printStackTrace();
             }
