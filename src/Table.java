@@ -18,20 +18,18 @@ public class Table extends ArrayList<Entry>{
         super();
         this.TriggeredPackets = TriggeredPackets;
         Table table = this;
-        new Timer().schedule(new TimerTask() {
+        new Timer(true).schedule(new TimerTask() {
             @Override
             public void run() {
                 System.out.println("Comprobando tabla en busca de rutas expiradas");
                 synchronized (table){
                     for (Entry e : table) {
-                        double nano = System.nanoTime();
-                        double elapsed1 =(nano - e.timer)/1000000000L;
-                        double elapsed = nano-e.timer;
-                        System.err.println(elapsed1);
-                        //double nano = System.nanoTime();
+                        if(e.isDirectConnected()) continue;
 
-                        if (e.isDirectConnected())
-                            continue;
+                        double elapsed1 =(System.nanoTime() - e.timer)/1000000000L;
+                        double elapsed = System.nanoTime() -e.timer;
+                        System.err.println(elapsed1);
+
 
                         if (!e.garbage & (elapsed > TIMEOUT) | e.metrica==(byte)16) { //Marcando como basura cuando se cumple el tiempo
                             System.out.println("Marcando como basura: "+e);
