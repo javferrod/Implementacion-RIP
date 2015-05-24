@@ -10,10 +10,11 @@ public class Entry {
     boolean garbage;
 
 
-    Entry(byte[] IPv4, byte[] mascara, byte metric){
+    Entry(byte[] IPv4, byte[] mascara,byte[] nextHoop, byte metric){
         try {
             this.IPv4=InetAddress.getByAddress(IPv4);
             this.mask =InetAddress.getByAddress(mascara);
+            this.nextHop=InetAddress.getByAddress(nextHoop);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }

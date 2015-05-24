@@ -1,4 +1,7 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -35,6 +38,7 @@ class RipServer {
         senderThread.start();
         triggeredUpdateThread.start();
 
+        /*
         Console console = System.console();
         InetAddress IP = null,Mask = null;
         String input = console.readLine("Introduce IP para Triggered inmediato:");
@@ -57,7 +61,7 @@ class RipServer {
             entryTable.add(e);
             entryTable.TriggeredPackets.put(e);
         } catch (InterruptedException ignored) {
-        }
+        }*/
 
     }
 
@@ -73,7 +77,7 @@ class RipServer {
         receiverThread.interrupt();
         for (InetAddress iPDestination: neighbors){
             try {
-                socket.send(p.getDatagramPacket(iPDestination, 520)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+                socket.send(p.getDatagramPacket(iPDestination, 7000)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -100,8 +104,8 @@ class RipServer {
             IP=IPs.nextElement();
 
         IPstring = IP.toString().substring(1,IP.toString().length());
-        System.out.println("ripconf-"+IPstring+".txt");
-        entryTable.add(new Entry(IPstring,"24",0));
+        System.out.println("ripconf-" + IPstring + ".txt");
+        //entryTable.add(new Entry(IPstring,"32",0));
 
         File conf = new File("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
         //Abrimos el archivo

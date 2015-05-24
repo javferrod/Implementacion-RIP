@@ -6,7 +6,7 @@ public class Rip {
 
         RipServer RIP = new RipServer();
         RIP.readConfig();
-        RIP.setPort(520);
+        RIP.setPort(7000);
         RIP.start();
     }
 

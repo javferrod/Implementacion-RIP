@@ -27,12 +27,12 @@ public class Table extends ArrayList<Entry>{
                     for (int i = 0; i < table.size(); i++) {
                         Entry e = table.get(i);
 
+                        if (e.isDirectConnected()) continue;
+
                         double elapsed1 =(System.nanoTime() - e.timer)/1000000000L;
                         double elapsed = System.nanoTime()-e.timer;
                         System.err.println(elapsed1);
 
-                        if (e.isDirectConnected())
-                            continue;
 
                         if (!e.garbage & (elapsed > TIMEOUT | e.getMetric() == (byte) 16)) { //Marcando como basura cuando se cumple el tiempo
                             System.out.println("Marcando como basura: " + e);

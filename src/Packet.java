@@ -32,6 +32,7 @@ public class Packet {
             entrys.add(new Entry(
                     new byte[]{content.get(j * 20 + 8), content.get(j * 20 + 9), content.get(j * 20 + 10), content.get(j * 20 + 11)}, //Añade la IPv4
                     new byte[]{content.get(j * 20 + 12), content.get(j * 20 + 13), content.get(j * 20 + 14), content.get(j * 20 + 15)}, //Añade la mascara
+                    new byte[]{content.get(j * 20 + 16),content.get(j * 20 + 17),content.get(j * 20 + 18),content.get(j * 20 + 19)}, //Añade el Next Hop
                     content.get(j * 20 + 23)));  //Añade la metrica)
         }
         return entrys;
@@ -78,7 +79,7 @@ public class Packet {
 
         //Split Horizon with Poison Reverse
         index = 0;
-        for(Entry e:this.getEntrys()){
+        for(Entry e: this.getEntrys()){
             if(e.getNextHop().equals(addrDestino))
                 setMetric(index, 16);
             index++;
