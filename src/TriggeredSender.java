@@ -20,27 +20,27 @@ public class TriggeredSender implements Runnable {
         Random r = new Random();
         long elapsed;
         Entry e;
-
-        try {
-            e = triggeredPackets.take();
-            pendingTriggeredPackets.add(e);
-            Thread.sleep(10);
-        } catch (InterruptedException ignored) {
-        }
-
-        elapsed = System.nanoTime() - timer;
-        timeToWait = (1 + r.nextInt(4)) * 1000000000L;
-
-        if (elapsed < timeToWait) {
+        while(true) {
             try {
-                Thread.sleep(timeToWait - elapsed);
+                e = triggeredPackets.take();
+                pendingTriggeredPackets.add(e);
+                Thread.sleep(10);
             } catch (InterruptedException ignored) {
             }
-        }
-        System.out.println("TRIGGERED UPDATE");
-        triggeredPackets.drainTo(pendingTriggeredPackets);
-        RipServer.sendUnicast(getTriggeredPacket());
 
+            elapsed = System.nanoTime() - timer;
+            timeToWait = (1 + r.nextInt(4)) * 1000000000L;
+
+            if (elapsed < timeToWait) {
+                try {
+                    Thread.sleep(timeToWait - elapsed);
+                } catch (InterruptedException ignored) {
+                }
+            }
+            System.out.println("TRIGGERED UPDATE");
+            triggeredPackets.drainTo(pendingTriggeredPackets);
+            RipServer.sendUnicast(getTriggeredPacket());
+        }
     }
 
     private Packet getTriggeredPacket() {

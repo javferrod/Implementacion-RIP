@@ -39,7 +39,7 @@ public class Table extends ArrayList<Entry>{
                             e.setMetric(16);
                             e.resetTimer();
                             e.garbage = true;
-                            table.set(e);
+                            table.set(i,e);
                             continue;
                         }
                         if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
