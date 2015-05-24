@@ -25,7 +25,6 @@ class RipServer {
     static LinkedBlockingQueue<Entry> TriggeredPackets = new LinkedBlockingQueue<>();
     static volatile Table entryTable = new Table(TriggeredPackets);
 
-
     static Thread receiverThread = new Thread(new Receiver(entryTable));
     Thread senderThread = new Thread(new Sender(entryTable,30,receiverThread));
     Thread triggeredUpdateThread = new Thread(new TriggeredSender(TriggeredPackets));
