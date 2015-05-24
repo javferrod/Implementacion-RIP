@@ -58,11 +58,11 @@ class RipServer {
         assert Mask != null;
         Entry e = new Entry(IP.getAddress(),Mask.getAddress(),(byte)Integer.parseInt(input));
         try {
+            entryTable.add(e);
             entryTable.TriggeredPackets.put(e);
         } catch (InterruptedException e1) {
             System.out.println("PENE");
         }
-
 
     }
 
@@ -101,7 +101,6 @@ class RipServer {
         while(!(IP instanceof Inet4Address))
             IP=IPs.nextElement();
 
-        System.out.println(IP);
         System.out.println("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
 
         File conf = new File("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");

@@ -66,7 +66,6 @@ public class Packet {
 
     }
     DatagramPacket getDatagramPacket(InetAddress addrDestino, int puertoDestino){
-        System.err.println(addrDestino);
 
         //Split Horizon with Poison Reverse
         ByteBuffer tContent = content;
@@ -80,7 +79,6 @@ public class Packet {
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
-            System.out.println(nextHoopa);
             assert nextHoopa != null;
             if(nextHoopa.equals(addrDestino))
                 tContent.put(23+20*j,(byte)16);

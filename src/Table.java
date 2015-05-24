@@ -26,21 +26,22 @@ public class Table extends ArrayList<Entry>{
                     for (int i = 0; i < table.size(); i++) { //TODO cambiar este loop para que sea Entry e: table
                         double nano = System.nanoTime();
                         Entry e = table.get(i);
-                        double segs =(nano - e.timer)/1000000000L;
-                        System.err.println(segs);
+                        double elapsed1 =(nano - e.timer)/1000000000L;
+                        double elapsed = nano-e.timer;
+                        System.err.println(elapsed1);
                         //double nano = System.nanoTime();
 
                         if (e.isDirectConnected())
                             continue; //TODO ¿las rutas conectadas se eliminan? En este caso NO
 
-                        if (!e.garbage & ((nano-e.timer > TIMEOUT)|e.metrica==(byte)16)) { //Marcando como basura cuando se cumple el tiempo
+                        if (!e.garbage & (elapsed > TIMEOUT) | e.metrica==(byte)16) { //Marcando como basura cuando se cumple el tiempo
                             System.out.println("Marcando como basura: "+e);
                             e.garbage = true;
                             e.metrica = (byte) 16;
                             e.resetTimer();
                             table.set(e);
                         }
-                        if(e.garbage & nano - e.timer > GARBAGETIMEOUT){ //Eliminamos la basura
+                        if(e.garbage & elapsed > GARBAGETIMEOUT){ //Eliminamos la basura
                             System.out.println("Eliminando: "+e);
                             table.remove(e);
                         }
@@ -75,12 +76,10 @@ public class Table extends ArrayList<Entry>{
 
         }
     }
-    public void addTriggered(Entry e){
-        try {
-            TriggeredPackets.put(e);
-        } catch (InterruptedException e1) {
-            System.out.println("PENE");
-        }
+    public void refresh(Entry e){
+        int index = this.indexOf(e);
+        e.resetTimer();
+        this.set(index, e);
     }
     public void setwithHeuristic(Entry e){
         synchronized (this) {

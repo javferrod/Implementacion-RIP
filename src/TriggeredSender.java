@@ -22,13 +22,14 @@ public class TriggeredSender implements Runnable {
             try {
                 pendingTriggeredPackets.add(triggeredPackets.take());
             } catch (InterruptedException e1) {
-                e1.printStackTrace();
+                System.out.println("Interrupted");
             }
 
             Random r = new Random();
-            long elapsed = System.nanoTime() - (timer + (1 + r.nextInt(4)) * 1000000000L);
+            long elapsed = System.nanoTime() - timer;
+            long timeToWait = (1 + r.nextInt(4)) * 1000000000L;
 
-            if (elapsed > 5000000000L) {
+            if (elapsed > timeToWait) {
                 System.out.println("[Triggered Update] Sending");
                 RipServer.sendUnicast(getTriggeredPacket());
                 timer = System.nanoTime();
@@ -37,7 +38,7 @@ public class TriggeredSender implements Runnable {
                 triggeredPackets.drainTo(pendingTriggeredPackets);
                 synchronized (this) {
                     try {
-                        Thread.sleep(elapsed * 1000 + r.nextInt(5) * 1000);
+                        Thread.sleep(timeToWait - elapsed);
                         RipServer.sendUnicast(getTriggeredPacket());
                     } catch (InterruptedException ignored) {
                         ignored.printStackTrace();

@@ -25,7 +25,6 @@ public class Receiver implements Runnable {
     }
 
     public void procesarPaquete(DatagramPacket paqueteRecibido) {
-        System.out.println("INFO: Procesando paquete recibido");
         byte[] p = paqueteRecibido.getData();
 
         if (p[0] == Tipo.REQUEST.v) {
@@ -92,8 +91,13 @@ public class Receiver implements Runnable {
                         e1.printStackTrace();
                     }
                     if (paqueteRecibido.getAddress().equals(nextHoopa)) { //Viene del mismo router, por lo tanto es la misma ruta
+                        if(old.metrica == (byte) metrica){
+                            entryTable.refresh(old); //Solo reiniciamos el timeOut
+                            continue;
+                        }
                         old.metrica = (byte) metrica;
                         entryTable.set(old);
+
 
                     }
                     else {
