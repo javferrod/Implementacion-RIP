@@ -73,7 +73,6 @@ public class Packet {
     DatagramPacket getDatagramPacket(InetAddress addrDestino, int puertoDestino){
 
         //Split Horizon with Poison Reverse
-        ByteBuffer tContent = content;
         index = 0;
         for(Entry e:this.getEntrys()){
             if(e.getNextHop().equals(addrDestino))

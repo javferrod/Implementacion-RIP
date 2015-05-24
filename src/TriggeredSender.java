@@ -9,67 +9,44 @@ public class TriggeredSender implements Runnable {
     private LinkedList<Entry> pendingTriggeredPackets = new LinkedList<>();
 
 
-    TriggeredSender(LinkedBlockingQueue<Entry> link){
-        this.triggeredPackets =link;
+    TriggeredSender(LinkedBlockingQueue<Entry> link) {
+        this.triggeredPackets = link;
     }
 
     @Override
     public void run() {
-        Entry e = null;
         long timer = System.nanoTime();
+        long timeToWait;
+        Packet send;
+        Random r = new Random();
+        long elapsed;
+        Entry e;
 
-        while(true) {
+        try {
+            e = triggeredPackets.take();
+            Thread.sleep(10);
+        } catch (InterruptedException ignored) {
+        }
+
+        elapsed = System.nanoTime() - timer;
+        timeToWait = (1 + r.nextInt(4)) * 1000000000L;
+
+        if (elapsed < timeToWait) {
             try {
-                pendingTriggeredPackets.add(triggeredPackets.take());
-            } catch (InterruptedException e1) {
-                System.out.println("Interrupted");
+                Thread.sleep(timeToWait - elapsed);
+            } catch (InterruptedException ignored) {
             }
-
-            Random r = new Random();
-            long elapsed = System.nanoTime() - timer;
-            long timeToWait = (1 + r.nextInt(4)) * 1000000000L;
-
-            if (elapsed > timeToWait) {
-                System.out.println("[Triggered Update] Sending");
-                RipServer.sendUnicast(getTriggeredPacket());
-                timer = System.nanoTime();
-            } else {
-                System.out.println("[Triggered Update] Waiting for timeout");
-                triggeredPackets.drainTo(pendingTriggeredPackets);
-                synchronized (this) {
-                    try {
-                        Thread.sleep(timeToWait - elapsed);
-                        RipServer.sendUnicast(getTriggeredPacket());
-                    } catch (InterruptedException ignored) {
-                        ignored.printStackTrace();
-                    }
-                }
-            }
-
         }
 
-        }
+        triggeredPackets.drainTo(pendingTriggeredPackets);
 
-    private Packet getTriggeredPacket(){
-        int pendingSize = pendingTriggeredPackets.size();
-        int blockingSize = triggeredPackets.size();
-        int totalSize = pendingSize+blockingSize;
-        if(pendingSize>25) pendingSize=25;
-        if(totalSize>25) {
-            blockingSize = 25 - pendingSize;
-            totalSize = 25;
-        }
 
-        Packet p = new Packet(Tipo.RESPONSE,totalSize);
-
-        for (int i = 0; i < pendingSize ; i++) {
-            p.addEntry(pendingTriggeredPackets.pop());
-        }
-        for (int j = 0; j < blockingSize; j++) {
-            p.addEntry(triggeredPackets.poll());
-        }
-
-        return p;
     }
 
+    private Packet getTriggeredPacket(Entry e) throws InterruptedException {
+        Packet p = new Packet(Tipo.RESPONSE,pendingTriggeredPackets.size());
+        pendingTriggeredPackets.forEach(p::addEntry);
+        return p;
+    }
 }
+
