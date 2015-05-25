@@ -25,7 +25,7 @@ public class TriggeredSender implements Runnable {
             try {
                 e = triggeredPackets.take();
                 pendingTriggeredPackets.add(e);
-                Thread.sleep(10);
+                Thread.sleep(50);
             } catch (InterruptedException ignored) {
             }
 
@@ -46,7 +46,13 @@ public class TriggeredSender implements Runnable {
 
     private Packet getTriggeredPacket() {
         Packet p = new Packet(Tipo.RESPONSE,pendingTriggeredPackets.size());
-        pendingTriggeredPackets.forEach(p::addEntry);
+        System.err.println("-----TRIGGERED-------");
+
+        for (Entry e: pendingTriggeredPackets){
+            System.out.println(e);
+            p.addEntry(e);
+        }
+        System.out.println("--------------------");
 
         return p;
     }

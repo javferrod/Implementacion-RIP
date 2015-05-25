@@ -22,7 +22,6 @@ public class Table extends ArrayList<Entry>{
         new Timer(true).schedule(new TimerTask() {
             @Override
             public void run() {
-                System.out.println("Comprobando tabla en busca de rutas expiradas");
                 synchronized (table){
                     for (int i = 0; i < table.size(); i++) {
                         Entry e = table.get(i);
@@ -35,14 +34,19 @@ public class Table extends ArrayList<Entry>{
 
 
                         if (!e.garbage & (elapsed > TIMEOUT | e.getMetric() == (byte) 16)) { //Marcando como basura cuando se cumple el tiempo
+                            boolean triggered = false;
+                            if(e.getMetric()!=(byte)16) triggered = true;
                             System.out.println("Marcando como basura: " + e);
                             e.setMetric(16);
                             e.resetTimer();
                             e.garbage = true;
                             table.set(i,e);
-                            try {
-                                TriggeredPackets.put(e);
-                            } catch (InterruptedException ignored) {}
+                            if(triggered) {
+                                try {
+                                    TriggeredPackets.put(e);
+                                } catch (InterruptedException ignored) {
+                                }
+                            }
                             continue;
                         }
                         if (e.garbage & elapsed > GARBAGETIMEOUT) { //Eliminamos la basura
@@ -63,6 +67,11 @@ public class Table extends ArrayList<Entry>{
         }
     }
 
+    /**
+     * Devuelve la entrada si existe, si no existe devuelve -1
+     * @param e
+     * @return
+     */
     public Entry get(Entry e){
         synchronized (this) {
             int index = this.indexOf(e);
@@ -74,6 +83,11 @@ public class Table extends ArrayList<Entry>{
         e.resetTimer();
         return super.add(e);
     }
+
+    /**
+     * Guarda la entrada en la tabla, a su vez reinicia el timer
+     * @param e
+     */
     public void set(Entry e){
         synchronized (this) {
             int index = this.indexOf(e);

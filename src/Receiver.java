@@ -37,15 +37,9 @@ public class Receiver implements Runnable {
 
 
         if (p[0] == Tipo.REQUEST.v) {
-            //TODO ¿Correcta la comprobación de length?
-            if (p.length == 24 & p[4] == 0 & p[23] == 16) {//Es una petición para enviar toda la TimerEx.tabla
+            if (p.length == 44 & p[4] == 0 & p[43] == 16) {//Es una petición para enviar toda la tabla
                 Packet enviar = new Packet(Tipo.RESPONSE, entryTable.size());
                 entryTable.forEach(enviar::addEntry);
-                try {
-                    RipServer.socket.send(enviar.getDatagramPacket(receivedPacket.getAddress(), receivedPacket.getPort())); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             } else { //Es un request para algunas entradas
                 Packet pReceivec = new Packet(p);
                 int entryIndex = 0;
@@ -62,19 +56,12 @@ public class Receiver implements Runnable {
                 }
                 //Enviamos el paquete de vuelta
                 if (hayEntradas) pReceivec.setCommand(Tipo.RESPONSE);
-                //TODO enviar solo al que respondió
             }
 
         }
         if (p[0] == Tipo.RESPONSE.v) {
             Packet recibido = new Packet(p);
-            /*
-            Comprobar cabecera:
-            -IPv4 origen perteneciente a una ruta conectada
-            -Puerto de llegada por 520 (puerto RIP)
-            -IPv4 que no sea la nuestra
 
-             */
             for (Entry newEntry : recibido.getEntrys()) {
                 System.out.println("INFO: Procesando entrada del paquete recibido: " + newEntry);
                 int metrica = newEntry.getMetric();
@@ -82,7 +69,6 @@ public class Receiver implements Runnable {
 
 
                 /*--Comprobación de  entrada--*/
-                //Comprobar IPv4 válida
                 if (metrica < 0 || metrica > 16) continue;
                 /*--FIN de comprobacion--*/
                 metrica += 1;
@@ -91,12 +77,10 @@ public class Receiver implements Runnable {
 
                 if (old==null) { //No existía la ruta
                     if(metrica==16) continue;
-                    System.err.println("NO existe");
                     newEntry.setMetric(metrica);
                     newEntry.setNextHop(receivedPacket.getAddress());
                     entryTable.add(newEntry);
                 } else { //Existe la ruta
-                    System.err.println("existe");
                     if (receivedPacket.getAddress().equals(old.getNextHop())) { //Viene del mismo router, por lo tanto es la misma ruta
                         if(old.getMetric() == (byte) metrica){
                             if(metrica==16) continue;
