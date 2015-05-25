@@ -2,6 +2,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Packet {
     private ByteBuffer content;
@@ -37,7 +38,7 @@ public class Packet {
         for (int i = 8; i < 24; i++) {
             passToValidate[i-8]=content.get(i);
         }
-        return passToValidate.equals(password);
+        return Arrays.equals(passToValidate, password);
     }
     public static void genPassword(String pass){
         while(pass.length()<16) pass+="0";
