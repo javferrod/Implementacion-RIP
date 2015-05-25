@@ -1,13 +1,11 @@
-import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.nio.charset.Charset;
 
 public class Packet {
     private ByteBuffer content;
-    private int index;
+    private int index=1;
     static private byte [] password;
     Packet(Tipo t, int numEntradas){
         content = ByteBuffer.allocate(4+20*numEntradas);
@@ -32,22 +30,16 @@ public class Packet {
         if((mensaje.length-4)%20!=0) return; //TODO como transmitirselo a la clase que llama? !=null?
         this.content =ByteBuffer.wrap(mensaje);
     }
-
     public static void genPassword(String pass){
-        while(pass.length()<16){
-            pass+="0";
-        }
-        if(pass.length()>16){
-            pass=pass.substring(0,16);
-        }
-        byte[] contraseña = pass.getBytes();
-        password=contraseña; //Aquí un array de 16 byts
+        while(pass.length()<16) pass+="0";
+        if(pass.length()>16) pass=pass.substring(0,16);
+        password= pass.getBytes(); //Aquí un array de 16 byts
     }
 
 
     ArrayList<Entry> getEntrys(){
         ArrayList<Entry> entrys = new ArrayList<>();
-        for (int j = 0; j < (content.limit()-4)/20; j++) {
+        for (int j = 1; j < (content.limit()-4)/20; j++) {
             if(content.get(j * 20 + 8)==(byte)0) return entrys; //Cuando no haya IPv4 significa que ya no hay más entradas
             entrys.add(new Entry(
                     new byte[]{content.get(j * 20 + 8), content.get(j * 20 + 9), content.get(j * 20 + 10), content.get(j * 20 + 11)}, //Añade la IPv4
@@ -59,7 +51,7 @@ public class Packet {
     }
 
     void setMetric(int index, int metric){
-        content.put(20 * index + 23, (byte) metric);
+        content.put(20 * index+1 + 23, (byte) metric);
     }
     void setCommand(Tipo t){
         content.put(0, (byte) t.v);
@@ -98,7 +90,7 @@ public class Packet {
     DatagramPacket getDatagramPacket(InetAddress addrDestino, int puertoDestino){
 
         //Split Horizon with Poison Reverse
-        index = 0;
+        int index = 0;
         for(Entry e: this.getEntrys()){
             if(e.getNextHop().equals(addrDestino))
                 setMetric(index, 16);
