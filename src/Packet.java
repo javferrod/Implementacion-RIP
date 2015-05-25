@@ -1,7 +1,9 @@
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.nio.charset.Charset;
 
 public class Packet {
     private ByteBuffer content;
@@ -32,10 +34,14 @@ public class Packet {
     }
 
     public static void genPassword(String pass){
-
-
-
-        password=new byte[16]; //Aquí un array de 16 byts
+        while(pass.length()<16){
+            pass+="0";
+        }
+        if(pass.length()>16){
+            pass=pass.substring(0,16);
+        }
+        byte[] contraseña = pass.getBytes();
+        password=contraseña; //Aquí un array de 16 byts
     }
 
 
