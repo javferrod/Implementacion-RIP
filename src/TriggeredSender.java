@@ -48,7 +48,6 @@ public class TriggeredSender implements Runnable {
         for (int i = 0; i < pendingTriggeredPackets.size() ; i++) {
             p.addEntry(pendingTriggeredPackets.pop());
         }
-        pendingTriggeredPackets.forEach(p::addEntry);
         return p;
     }
 }

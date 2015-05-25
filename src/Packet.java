@@ -98,7 +98,31 @@ public class Packet {
 
     }
     DatagramPacket getDatagramPacket(InetAddress addrDestino, int puertoDestino){
+        /*if(index>24){
+            ArrayList<Entry> Entries = this.getEntrys();
+            int numEntradas = Entries.size();
+            int numBucles = (int) Math.floor(numEntradas / 24);
 
+            ArrayList<Packet> Packages = new ArrayList<>();
+            for (int i = 0; i < numBucles ; i++) {
+                Packet p = new Packet(Tipo.RESPONSE,24);
+                for (int j = 0; j < 24 ; j++) {
+                    p.addEntry(Entries.get(j));
+                    Packages.add(p);
+                }
+            }
+            
+            
+            for (int i = 0; i < 24 ; i++) {
+                Packages.add(new Packet(Tipo.RESPONSE,)
+            }
+        }
+        else{
+            
+        }*/
+        
+        
+        
         //Split Horizon with Poison Reverse
         int index = 0;
         for(Entry e: this.getEntrys()){
