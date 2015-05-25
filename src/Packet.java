@@ -26,9 +26,18 @@ public class Packet {
 
 
     }
+
     Packet(byte[] mensaje){
         if((mensaje.length-4)%20!=0) return; //TODO como transmitirselo a la clase que llama? !=null?
         this.content =ByteBuffer.wrap(mensaje);
+    }
+
+    public boolean isPassValid(){
+        byte [] passToValidate=new byte[16];
+        for (int i = 8; i < 24; i++) {
+            passToValidate[i-8]=content.get(i);
+        }
+        return passToValidate.equals(password);
     }
     public static void genPassword(String pass){
         while(pass.length()<16) pass+="0";

@@ -28,7 +28,7 @@ public class Receiver implements Runnable {
         if(!RipServer.isNeighbor(receivedPacket.getAddress())) return;
 
         byte[] p = receivedPacket.getData();
-
+        if(!new Packet(p).isPassValid()) return;
         if(!(p[0]==Tipo.REQUEST.v|p[0]==Tipo.RESPONSE.v)) return;
         if(p[1]!=(byte)2) return;
 
