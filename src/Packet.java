@@ -8,7 +8,7 @@ public class Packet {
     private int index=1;
     static private byte [] password;
     Packet(Tipo t, int numEntradas){
-        content = ByteBuffer.allocate(4+20*numEntradas);
+        content = ByteBuffer.allocate(4+20*(numEntradas+1));
        /*-----HEADER----*/
         content.put( (byte) t.v);                      //Command
         content.put( (byte) 2);                        //Version de RIP
