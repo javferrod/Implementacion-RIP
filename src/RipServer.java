@@ -75,9 +75,10 @@ class RipServer {
 
     public static void sendUnicast(Packet p){
         receiverThread.interrupt();
+
         for (InetAddress iPDestination: neighbors){
             try {
-                socket.send(p.getDatagramPacket(iPDestination, 7000)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
+                socket.send(p.getDatagramPacket(iPDestination, 520)); //TODO ¿.getPort() es el puerto de origen del paquete o el puerto destino?
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -105,7 +106,7 @@ class RipServer {
 
         IPstring = IP.toString().substring(1,IP.toString().length());
         System.out.println("ripconf-" + IPstring + ".txt");
-        entryTable.add(new Entry(IPstring,"32",0));
+        entryTable.add(new Entry(IPstring, "32", 0));
 
         File conf = new File("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
         //Abrimos el archivo

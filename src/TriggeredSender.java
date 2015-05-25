@@ -21,6 +21,7 @@ public class TriggeredSender implements Runnable {
         long elapsed;
         Entry e;
         while(true) {
+            pendingTriggeredPackets = new LinkedList<>();
             try {
                 e = triggeredPackets.take();
                 pendingTriggeredPackets.add(e);
@@ -45,9 +46,8 @@ public class TriggeredSender implements Runnable {
 
     private Packet getTriggeredPacket() {
         Packet p = new Packet(Tipo.RESPONSE,pendingTriggeredPackets.size());
-        for (int i = 0; i < pendingTriggeredPackets.size() ; i++) {
-            p.addEntry(pendingTriggeredPackets.pop());
-        }
+        pendingTriggeredPackets.forEach(p::addEntry);
+
         return p;
     }
 }

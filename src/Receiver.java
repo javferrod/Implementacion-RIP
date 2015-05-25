@@ -24,7 +24,7 @@ public class Receiver implements Runnable {
 
     public void procesarPaquete(DatagramPacket receivedPacket) {
 
-        if(receivedPacket.getPort()!=7000) return;
+        if(receivedPacket.getPort()!=520) return;
         if(!RipServer.isNeighbor(receivedPacket.getAddress())) return;
 
         byte[] p = receivedPacket.getData();

@@ -32,6 +32,13 @@ public class Packet {
         if((mensaje.length-4)%20!=0) return; //TODO como transmitirselo a la clase que llama? !=null?
         this.content =ByteBuffer.wrap(mensaje);
     }
+    Packet(Packet clone){
+
+
+        byte[] array = clone.content.array();
+        ByteBuffer.wrap(clone.content.array());
+        this.index = clone.index;
+    }
 
     public boolean isPassValid(){
         byte [] passToValidate=new byte[16];
@@ -103,14 +110,26 @@ public class Packet {
             int numEntradas = Entries.size();
             int numBucles = (int) Math.floor(numEntradas / 24);
 
+            //Añade paquetes de 24 entradas hasta que sea necesario
             ArrayList<Packet> Packages = new ArrayList<>();
             for (int i = 0; i < numBucles ; i++) {
                 Packet p = new Packet(Tipo.RESPONSE,24);
                 for (int j = 0; j < 24 ; j++) {
-                    p.addEntry(Entries.get(j));
+                    p.addEntry(Entries.get(j+i*24));
                     Packages.add(p);
                 }
             }
+            int paquetesRestantes = numEntradas -24*numBucles;
+            //Si no es multiplo de 24, añade las entradas restantes al último paquete
+            if(paquetesRestantes!=0) {
+                Packet p = null;
+                for (int i = 0; i < paquetesRestantes; i++) {
+                    p = new Packet(Tipo.RESPONSE, paquetesRestantes);
+                    p.addEntry(Entries.get(i+24*numBucles));
+                }
+                Packages.add(p);
+            }
+            return Packages;
             
             
             for (int i = 0; i < 24 ; i++) {
@@ -119,18 +138,20 @@ public class Packet {
         }
         else{
             
-        }*/
+        }
+        */
         
-        
-        
+
+
         //Split Horizon with Poison Reverse
-        int index = 0;
+        Packet p = new Packet(Tipo.RESPONSE,getEntrys().size());
         for(Entry e: this.getEntrys()){
             if(e.getNextHop().equals(addrDestino))
-                setMetric(index, 16);
-            index++;
+                e.setMetric(16);
+            p.addEntry(e);
+
         }
-       return new DatagramPacket(content.array(),content.limit(), addrDestino, puertoDestino);
+       return new DatagramPacket(p.content.array(),p.content.limit(), addrDestino, puertoDestino);
 
     }
 
