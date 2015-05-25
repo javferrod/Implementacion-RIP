@@ -6,14 +6,22 @@ import java.util.ArrayList;
 public class Packet {
     private ByteBuffer content;
     private int index;
+    static private byte [] password;
     Packet(Tipo t, int numEntradas){
         content = ByteBuffer.allocate(4+20*numEntradas);
        /*-----HEADER----*/
-        content.put(0, (byte) t.v);                      //Command
-        content.put(1, (byte) 2);                        //Version de RIP
-        content.put(2, (byte) 0);                        //Relleno
-        content.put(3, (byte) 0);                        //Relleno
-        /*----AUTH------*/
+        content.put( (byte) t.v);                      //Command
+        content.put( (byte) 2);                        //Version de RIP
+        content.put( (byte) 0);                        //Relleno
+        content.put( (byte) 0);                        //Relleno
+        /*-----AUTH-----*/
+        content.put((byte)255);                        //Address Family
+        content.put((byte)255);
+        content.put((byte)0);
+        content.put((byte)2);                         //Authentication type
+        content.put(password);                        //Authentication
+
+
 
 
 
@@ -23,6 +31,12 @@ public class Packet {
         this.content =ByteBuffer.wrap(mensaje);
     }
 
+    public static void genPassword(String pass){
+
+
+
+        password=new byte[16]; //Aquí un array de 16 byts
+    }
 
 
     ArrayList<Entry> getEntrys(){
