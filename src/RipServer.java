@@ -7,15 +7,22 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Clase creada para hacer más legible el código
+ */
 enum Tipo {
     RESPONSE(2), REQUEST(1);
-    public final int v; // Variable interna donde almacenaremos la capacidad
+    public final int v; // Almacenamos el valor del campo para REQUEST o RESPONSE
 
     Tipo(int v) {
         this.v = v;
     }
 }
 
+/**
+ * Aporta métodos estáticos que emplearán el resto de clases, también
+ * contiene los datos e inicializa los distintos procesos
+ */
 class RipServer {
 
 
@@ -33,38 +40,19 @@ class RipServer {
     Thread triggeredUpdateThread = new Thread(new TriggeredSender(TriggeredPackets));
 
 
+    /**
+     * Inicializa los distintos procesos
+     */
     public void start() {
         receiverThread.start();
         senderThread.start();
         triggeredUpdateThread.start();
-
-        /*
-        Console console = System.console();
-        InetAddress IP = null,Mask = null;
-        String input = console.readLine("Introduce IP para Triggered inmediato:");
-        try {
-            IP = InetAddress.getByName(input);
-        } catch (UnknownHostException e) {
-            System.err.println("IP erronea");
-        }
-        input = console.readLine("Introduce Mascara:");
-        try {
-            Mask = InetAddress.getByName(input);
-        } catch (UnknownHostException e) {
-            System.err.println("Mac erronea");
-        }
-        input = console.readLine("Introduce métrica");
-        assert IP != null;
-        assert Mask != null;
-        Entry e = new Entry(IP.getAddress(),Mask.getAddress(),(byte)Integer.parseInt(input));
-        try {
-            entryTable.add(e);
-            entryTable.TriggeredPackets.put(e);
-        } catch (InterruptedException ignored) {
-        }*/
-
     }
 
+    /**
+     * Inicia el servidor en el puerto indicado
+     * @param puerto
+     */
     public void setPort(int puerto) {
         try {
             socket = new DatagramSocket(puerto);
@@ -73,6 +61,10 @@ class RipServer {
         }
     }
 
+    /**
+     * Envía un paquete a los routers directamente conectados
+     * @param p
+     */
     public static void sendUnicast(Packet p){
         receiverThread.interrupt();
 
@@ -88,6 +80,10 @@ class RipServer {
 
     }
 
+    /**
+     * Obtiene la IP de la interfaz eth0, lee el archivo de
+     * configuración y lo vuelca en la tabla de entradas
+     */
     public void readConfig() {
 
         Enumeration<InetAddress> IPs = null;
@@ -106,9 +102,10 @@ class RipServer {
 
         IPstring = IP.toString().substring(1,IP.toString().length());
         System.out.println("ripconf-" + IPstring + ".txt");
-        entryTable.add(new Entry(IPstring, "32", 0));
+        entryTable.add(new Entry(IPstring, "32", 0)); //Añadimos nuestra propia IP a la tabla
 
         File conf = new File("ripconf-"+IP.toString().substring(1,IP.toString().length())+".txt");
+
         //Abrimos el archivo
         try (BufferedReader r = new BufferedReader(new FileReader(conf))) {
             String linea;
@@ -118,7 +115,7 @@ class RipServer {
                 }
                 else if (linea.matches("^([0-9]+\\.){3}[0-9]{1,4}/[0-9]{1,2}$")) {
                     String[] s = linea.split("/");
-                    entryTable.add(new Entry(s[0], s[1], 1));
+                    entryTable.add(new Entry(s[0], s[1], 1)); //Corresponde a una ruta conectada
 
                 }
             }
@@ -127,6 +124,13 @@ class RipServer {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Comprueba si {@param IP} corresponde a un vecino válido
+     * en caso contrario devuelve false
+     * @param IP
+     * @return
+     */
     static boolean isNeighbor(InetAddress IP){
         for (InetAddress address : neighbors){
             if(address.equals(IP))

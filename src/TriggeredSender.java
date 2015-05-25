@@ -25,10 +25,13 @@ public class TriggeredSender implements Runnable {
             try {
                 e = triggeredPackets.take();
                 pendingTriggeredPackets.add(e);
-                Thread.sleep(50);
             } catch (InterruptedException ignored) {
             }
 
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ignored) {
+            }
             elapsed = System.nanoTime() - timer;
             timeToWait = (1 + r.nextInt(4)) * 1000000000L;
 

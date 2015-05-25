@@ -4,6 +4,11 @@ import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
+/**
+ * Contiene las entradas RIP, aporta métodos para añadir y borrar
+ * entradas de manera concurrente. También se ocupa de buscar y eliminar
+ * las entradas caducadas
+ */
 public class Table extends ArrayList<Entry>{
 
     LinkedBlockingQueue<Entry> TriggeredPackets;
