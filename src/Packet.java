@@ -61,7 +61,7 @@ public class Packet {
     }
 
     void setMetric(int index, int metric){
-        content.put(20 * index+1 + 23, (byte) metric);
+        content.put(20 * (index+1) + 23, (byte) metric);
     }
     void setCommand(Tipo t){
         content.put(0, (byte) t.v);
