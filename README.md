@@ -13,10 +13,10 @@ Donde A.B.C.D es la ip de la maquina en la interfaz eth0.
 #Funcionamiento
 El funcionamiento es el mismo que el definido en el [estándar](https://tools.ietf.org/html/rfc2453). Las características
 implementadas son las siguientes:
--Split Horizon con Poison Reverse
--Triggered Updates: *Presenta algunos leves fallos*
--Autentificación con contraseña simple
--Respuesta a peticiones: *Nunca probado*
+- Split Horizon con Poison Reverse
+- Triggered Updates: *Presenta algunos leves fallos*
+- Autentificación con contraseña simple
+- Respuesta a peticiones: *Nunca probado*
 
 El programa respeta rigurosamente los tiempos especificados por el estándar.
 Los paquetes creados con este programa cumplen la especificación de RIP v2 y es compatible con cualquier programa que 
@@ -28,9 +28,9 @@ indicación del profesor.
 #Estructura
 
 Se emplean 4 thread:
--Receiver: Para recibir paquetes, que se interrumpirá cada vez que se tenga que enviar uno. 
--Sender: Para enviar los paquetes ordinarios cada 30 segundos
--TriggeredUpdates: Emplea el modelo consumidor para esperar por rutas a incluir en un Triggered Update 
+- Receiver: Para recibir paquetes, que se interrumpirá cada vez que se tenga que enviar uno. 
+- Sender: Para enviar los paquetes ordinarios cada 30 segundos
+- TriggeredUpdates: Emplea el modelo consumidor para esperar por rutas a incluir en un Triggered Update 
 mediante una blocking queue
--Table: Almacena los datos y a la vez vigila que las rutas cumplan con los tiempos de expiración y 
+- Table: Almacena los datos y a la vez vigila que las rutas cumplan con los tiempos de expiración y 
 recoleccion de basura
